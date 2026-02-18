@@ -61,29 +61,46 @@ class MedicineController extends Controller
     /**
      * お薬情報を更新する
      */
-    public function update(Request $request, $id)
-    {
-        $medicine = Medicine::findOrFail($id);
-        $medicine->medicine_name = $request->medicine_name;
-        $medicine->scheduled_time = $request->scheduled_time;
+   public function update(Request $request, $id)
+{
+    // 編集対象のデータを一つ特定する（基準点として使用）
+    $medicine = Medicine::findOrFail($id);
 
-        // ★ 更新時もプルダウン判定を適用
-        if ($request->dosage_select === 'other') {
-            $medicine->dosage = $request->dosage_manual;
-        } else {
-            $medicine->dosage = $request->dosage_select;
-        }
+    // 1. バリデーション
+    $request->validate([
+        'medicine_name' => 'required|string|max:255',
+        'timings' => 'required|array', 
+        'dosage_select' => 'required',
+        'image' => 'nullable|image|max:2048',
+    ]);
 
-        // 画像が新しくアップロードされた場合のみ上書き
-        if ($request->hasFile('image') && $request->file('image')->isValid()) {
-            $path = $request->file('image')->store('medicines', 'public');
-            $medicine->image_path = $path;
-        }
+    // 2. 分量の決定
+    $dosage = $request->dosage_select === 'other' ? $request->dosage_manual : $request->dosage_select;
 
-        $medicine->save();
-
-        return redirect('/patients')->with('success', 'お薬情報を更新しました。');
+    // 3. 画像の処理
+    $imagePath = $medicine->image_path;
+    if ($request->hasFile('image') && $request->file('image')->isValid()) {
+        $imagePath = $request->file('image')->store('medicines', 'public');
     }
+
+    // 4. 【重要】同じ患者さんの、同じ名前のお薬スケジュールを一度すべて削除
+    Medicine::where('patient_id', $medicine->patient_id)
+            ->where('medicine_name', $medicine->medicine_name)
+            ->delete();
+
+    // 5. チェックされた時間（timings）の数だけ新規作成
+    foreach ($request->timings as $time) {
+        Medicine::create([
+            'patient_id' => $medicine->patient_id,
+            'medicine_name' => $request->medicine_name,
+            'scheduled_time' => $time,
+            'dosage' => $dosage,
+            'image_path' => $imagePath,
+        ]);
+    }
+
+    return redirect('/patients')->with('success', 'お薬情報を一括更新しました。');
+}
 
     /**
      * 「飲んだ！」ボタン：服用記録とメモを保存する
