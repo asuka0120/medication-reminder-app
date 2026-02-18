@@ -146,11 +146,19 @@
                                             </form>
                                         </div>
                                     @else
-                                        <form action="{{ route('adherences.store') }}" method="POST" style="margin:0;">
-                                            @csrf
-                                            <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
-                                            <button type="submit" class="btn" style="background-color: #4CAF50; color: white; padding: 5px 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">飲んだ！</button>
-                                        </form>
+                                       <form action="{{ route('adherences.store') }}" method="POST" style="margin:0; display: flex; align-items: center; gap: 8px;">
+                                           @csrf
+                                           <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
+    
+                                           {{-- メモ入力欄の復活 --}}
+                                           <input type="text" name="note" placeholder="体調メモ" 
+                                                  style="font-size: 0.8em; padding: 6px; border-radius: 5px; border: 1px solid #ddd; width: 140px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+    
+                                           <button type="submit" class="btn" 
+                                                   style="background-color: #4CAF50; color: white; padding: 6px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
+                                               飲んだ！
+                                           </button>
+                                      </form>
                                     @endif
                                 </div>
                             </div>
