@@ -29,7 +29,7 @@
         text-align: center;
     }
     td {
-        background-color: #ffffff;
+        /* background-color は個別指定するため削除 */
         padding: 12px;
         border-bottom: 1px solid #efebe9;
         vertical-align: middle;
@@ -48,23 +48,33 @@
     .btn-danger { background-color: #e53935; color: white; }
     .btn-edit { background-color: #1e88e5; color: white; }
 
-    /* 【修正ポイント】スケジュールを左寄せでコンパクトに並べるスタイル */
+    /* スケジュールを中央寄せで配置するスタイル */
     .schedule-box {
         display: flex;
         align-items: center;
-        justify-content: space-between; /* 時刻を左、ボタンを右に配置 */
-        gap: 40px;                   /* 時刻とボタンの間隔 */
-        background-color: #fcfcfc;
-        border: 1px solid #eee;
-        padding: 10px 15px;          /* 上下左右の余白も少し広げるとより綺麗です */
+        justify-content: space-between; 
+        gap: 40px;
+        background-color: #ffffff;      /* ボックスの中は白で固定 */
+        border: 1px solid #ddd;
+        padding: 10px 20px;
         border-radius: 8px;
-        margin: 8px auto;               /* 「auto」で項目の中央に配置 */
-        width: 350px;                   /* ボックスの幅を広げて固定（5cm相当の余白） */
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        margin: 10px auto;             /* 上下の余白を少し増やし、左右autoで中央寄せ */
+        width: 350px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     .scheduled-time {
-        min-width: 60px;             /* 時刻の幅を揃えて見やすくする */
+        min-width: 60px;
+        font-weight: bold;
+        font-size: 1.2em;
     }
+
+    /* お薬ごとの区切りと背景色の切り替え */
+    .medicine-row {
+        border-top: 3px solid #d7ccc8 !important; /* 薬の種類が変わる線を太く */
+    }
+    .bg-odd { background-color: #ffffff; }     /* 1つ目の薬：白 */
+    .bg-even { background-color: #faf7f2; }    /* 2つ目の薬：ごく薄いベージュ */
+
 </style>
 
 <h1>ご家族のための服薬管理（くすりサポート）</h1>
@@ -99,9 +109,14 @@
             </thead>
             <tbody>
             @foreach ($patient->medicines->groupBy('medicine_name') as $name => $group)
-                @php $first = $group->first(); @endphp
-                <tr>
-                    <td>
+                @php 
+                    $first = $group->first(); 
+                    // 1つおきに背景色を変えるクラスを判定
+                    $rowColorClass = $loop->odd ? 'bg-odd' : 'bg-even';
+                @endphp
+                {{-- ここで背景色と太い境界線を適用 --}}
+                <tr class="medicine-row {{ $rowColorClass }}">
+                    <td class="{{ $rowColorClass }}">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             @if($first->image_path)
                                 <img src="{{ asset('storage/' . $first->image_path) }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
@@ -109,14 +124,14 @@
                             <strong class="medicine-name" style="font-size: 1.1em;">{{ $name }}</strong>
                         </div>
                     </td>
-                    <td style="text-align: center;">{{ $first->dosage }}</td>
-                    <td>
+                    <td style="text-align: center;" class="{{ $rowColorClass }}">{{ $first->dosage }}</td>
+                    <td class="{{ $rowColorClass }}">
                         @foreach ($group->sortBy('scheduled_time') as $medicine)
                             @php
                                 $isTaken = $medicine->adherences()->where('taken_date', now()->toDateString())->exists();
                             @endphp
                             <div class="schedule-box">
-                                <span class="scheduled-time" style="font-weight: bold; font-size: 1.1em;">
+                                <span class="scheduled-time">
                                     {{ \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}
                                 </span>
                                 
@@ -141,7 +156,7 @@
                             </div>
                         @endforeach
                     </td>
-                    <td style="text-align: center;">
+                    <td style="text-align: center;" class="{{ $rowColorClass }}">
                         <a href="{{ route('medicines.edit', $first->id) }}" class="btn btn-edit" style="font-size: 12px; margin-bottom: 5px; width: 60px;">編集</a>
                         <form action="{{ route('medicines.destroy', $first->id) }}" method="POST" onsubmit="return confirm('同じ名前のスケジュールを全て削除しますか？');">
                             @csrf @method('DELETE')
@@ -156,7 +171,7 @@
 @endforeach
 
 <script>
-    /* （通知スクリプト部分は変更なしのため継続してご利用いただけます） */
+    /* （通知スクリプト部分は変更なし） */
     document.addEventListener('DOMContentLoaded', function() {
         updateNotificationButton();
     });
