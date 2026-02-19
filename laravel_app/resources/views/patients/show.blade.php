@@ -39,6 +39,37 @@
     .check-box {
         font-size: 1.4em;
         color: #2e7d32;
+        cursor: pointer; /* タップできることを示す */
+    }
+    .medicine-thumb {
+        width: 35px; 
+        height: 35px; 
+        object-fit: cover; 
+        border-radius: 4px; 
+        cursor: pointer; /* タップできることを示す */
+    }
+
+    /* 拡大モーダルのスタイル */
+    #big-display-area {
+        display: none; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: rgba(0,0,0,0.8); 
+        z-index: 9999; 
+        cursor: pointer;
+    }
+    .modal-content {
+        background: white;
+        width: 90%;
+        max-width: 450px;
+        margin: 50px auto;
+        padding: 20px;
+        border-radius: 20px;
+        text-align: center;
+        position: relative;
     }
 </style>
 
@@ -71,7 +102,10 @@
                     <td class="medicine-column">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             @if($medicine->image_path)
-                                <img src="{{ asset('storage/' . $medicine->image_path) }}" style="width: 35px; height: 35px; object-fit: cover; border-radius: 4px;">
+                                {{-- 写真タップで拡大 --}}
+                                <img src="{{ asset('storage/' . $medicine->image_path) }}" 
+                                     class="medicine-thumb"
+                                     onclick="showBigDisplay('お薬の写真', '{{ $medicine->medicine_name }}', '{{ asset('storage/' . $medicine->image_path) }}', '')">
                             @endif
                             <div>
                                 <div style="font-size: 0.9em;">{{ $medicine->medicine_name }}</div>
@@ -85,7 +119,8 @@
                         @endphp
                         <td class="{{ $date->isToday() ? 'today-highlight' : '' }}">
                             @if($adherence)
-                                <div class="check-box">✅</div>
+                                {{-- ✅マークタップで詳細拡大 --}}
+                                <div class="check-box" onclick="showBigDisplay('{{ $date->format('n月j日') }} {{ \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note) }}')">✅</div>
                                 @if($adherence->note)
                                     <div style="font-size: 0.7em; color: #666; line-height: 1.1;">{{ $adherence->note }}</div>
                                 @endif
@@ -99,3 +134,41 @@
 </div>
 
 <a href="/patients" style="display: inline-block; margin-top: 25px; color: #ffffff; background-color: #5d4037; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold;">← 一覧に戻る</a>
+
+<div id="big-display-area" onclick="hideBigDisplay()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h2 id="modal-time" style="margin: 0; color: #5d4037; font-size: 1.2em;"></h2>
+        <h3 id="modal-name" style="margin: 10px 0; font-size: 1.6em;"></h3>
+        
+        <img id="modal-image" src="" style="width: 100%; max-height: 300px; object-fit: contain; border-radius: 10px; margin-bottom: 15px; display: none;">
+        
+        <div id="modal-note-box" style="background: #fff8e1; padding: 15px; border-radius: 10px; border: 1px solid #ffe082; text-align: left;">
+            <p style="font-weight: bold; margin: 0 0 5px 0; color: #795548; font-size: 0.9em;">📝 体調メモ</p>
+            <p id="modal-note" style="margin: 0; font-size: 1.1em; min-height: 1.2em;"></p>
+        </div>
+        
+        <button onclick="hideBigDisplay()" style="margin-top: 20px; padding: 10px 30px; border-radius: 25px; border: none; background: #5d4037; color: white; font-weight: bold; cursor: pointer;">閉じる</button>
+    </div>
+</div>
+
+<script>
+function showBigDisplay(time, name, imagePath, note) {
+    document.getElementById('modal-time').innerText = time + ' の記録';
+    document.getElementById('modal-name').innerText = name;
+    document.getElementById('modal-note').innerText = note ? note : '（メモはありません）';
+    
+    const imgTag = document.getElementById('modal-image');
+    if (imagePath) {
+        imgTag.src = imagePath;
+        imgTag.style.display = 'block';
+    } else {
+        imgTag.style.display = 'none';
+    }
+    
+    document.getElementById('big-display-area').style.display = 'block';
+}
+
+function hideBigDisplay() {
+    document.getElementById('big-display-area').style.display = 'none';
+}
+</script>

@@ -75,6 +75,33 @@
     .bg-odd { background-color: #ffffff; }     /* 1つ目の薬：白 */
     .bg-even { background-color: #faf7f2; }    /* 2つ目の薬：ごく薄いベージュ */
 
+    /* ...既存のスタイル... */
+    
+    .clickable { cursor: pointer; transition: opacity 0.2s; }
+    .clickable:hover { opacity: 0.8; }
+
+    /* 拡大モーダルのスタイル（show.blade.phpと同じ） */
+    #big-display-area {
+        display: none; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: rgba(0,0,0,0.8); 
+        z-index: 9999; 
+        cursor: pointer;
+    }
+    .modal-content {
+        background: white;
+        width: 90%;
+        max-width: 450px;
+        margin: 50px auto;
+        padding: 20px;
+        border-radius: 20px;
+        text-align: center;
+        position: relative;
+    }
 </style>
 
 <h1>ご家族のための服薬管理（くすりサポート）</h1>
@@ -111,15 +138,17 @@
             @foreach ($patient->medicines->groupBy('medicine_name') as $name => $group)
                 @php 
                     $first = $group->first(); 
-                    // 1つおきに背景色を変えるクラスを判定
                     $rowColorClass = $loop->odd ? 'bg-odd' : 'bg-even';
                 @endphp
-                {{-- ここで背景色と太い境界線を適用 --}}
                 <tr class="medicine-row {{ $rowColorClass }}">
                     <td class="{{ $rowColorClass }}">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             @if($first->image_path)
-                                <img src="{{ asset('storage/' . $first->image_path) }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
+                                {{-- 写真タップで拡大 --}}
+                                <img src="{{ asset('storage/' . $first->image_path) }}" 
+                                     class="clickable" 
+                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;"
+                                     onclick="showBigDisplay('お薬の写真', '{{ $name }}', '{{ asset('storage/' . $first->image_path) }}', '')">
                             @endif
                             <strong class="medicine-name" style="font-size: 1.1em;">{{ $name }}</strong>
                         </div>
@@ -128,7 +157,9 @@
                     <td class="{{ $rowColorClass }}">
                         @foreach ($group->sortBy('scheduled_time') as $medicine)
                             @php
-                                $isTaken = $medicine->adherences()->where('taken_date', now()->toDateString())->exists();
+                                // 服用記録があるか確認し、あればデータを取得
+                                $adherence = $medicine->adherences()->where('taken_date', now()->toDateString())->first();
+                                $isTaken = (bool)$adherence;
                             @endphp
                             <div class="schedule-box">
                                 <span class="scheduled-time">
@@ -138,7 +169,12 @@
                                 <div class="action-area">
                                     @if($isTaken)
                                         <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span style="color: #2e7d32; font-weight: bold;" class="status-taken">✅ 服用済み</span>
+                                            {{-- 服用済みマークタップでメモ拡大 --}}
+                                            <span style="color: #2e7d32; font-weight: bold;" 
+                                                  class="status-taken clickable"
+                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}', '{{ $name }}', '{{ $first->image_path ? asset('storage/' . $first->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
+                                                ✅ 服用済み
+                                            </span>
                                             <form action="{{ route('adherences.cancel') }}" method="POST" style="display:inline;">
                                                 @csrf
                                                 <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
@@ -149,14 +185,11 @@
                                        <form action="{{ route('adherences.store') }}" method="POST" style="margin:0; display: flex; align-items: center; gap: 8px;">
                                            @csrf
                                            <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
-    
-                                           {{-- メモ入力欄の復活 --}}
                                            <input type="text" name="note" placeholder="体調メモ" 
                                                   style="font-size: 0.8em; padding: 6px; border-radius: 5px; border: 1px solid #ddd; width: 140px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
-    
                                            <button type="submit" class="btn" 
                                                    style="background-color: #4CAF50; color: white; padding: 6px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
-                                               飲んだ！
+                                                飲んだ！
                                            </button>
                                       </form>
                                     @endif
@@ -178,8 +211,41 @@
     </div>
 @endforeach
 
+<div id="big-display-area" onclick="hideBigDisplay()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h2 id="modal-time" style="margin: 0; color: #5d4037; font-size: 1.2em;"></h2>
+        <h3 id="modal-name" style="margin: 10px 0; font-size: 1.6em;"></h3>
+        <img id="modal-image" src="" style="width: 100%; max-height: 300px; object-fit: contain; border-radius: 10px; margin-bottom: 15px; display: none;">
+        <div id="modal-note-box" style="background: #fff8e1; padding: 15px; border-radius: 10px; border: 1px solid #ffe082; text-align: left;">
+            <p style="font-weight: bold; margin: 0 0 5px 0; color: #795548; font-size: 0.9em;">📝 体調メモ</p>
+            <p id="modal-note" style="margin: 0; font-size: 1.1em; min-height: 1.2em;"></p>
+        </div>
+        <button onclick="hideBigDisplay()" style="margin-top: 20px; padding: 10px 30px; border-radius: 25px; border: none; background: #5d4037; color: white; font-weight: bold; cursor: pointer;">閉じる</button>
+    </div>
+</div>
+
 <script>
-    /* （通知スクリプト部分は変更なし） */
+    /* モーダル表示スクリプト */
+    function showBigDisplay(time, name, imagePath, note) {
+        document.getElementById('modal-time').innerText = time + ' の記録';
+        document.getElementById('modal-name').innerText = name;
+        document.getElementById('modal-note').innerText = note ? note : '（メモはありません）';
+        
+        const imgTag = document.getElementById('modal-image');
+        if (imagePath) {
+            imgTag.src = imagePath;
+            imgTag.style.display = 'block';
+        } else {
+            imgTag.style.display = 'none';
+        }
+        document.getElementById('big-display-area').style.display = 'block';
+    }
+
+    function hideBigDisplay() {
+        document.getElementById('big-display-area').style.display = 'none';
+    }
+
+    /* 通知設定スクリプト */
     document.addEventListener('DOMContentLoaded', function() {
         updateNotificationButton();
     });
@@ -208,6 +274,7 @@
         });
     }
 
+    /* 服薬チェック・通知送信 */
     setInterval(() => {
         if (Notification.permission !== 'granted') return;
         const now = new Date();
