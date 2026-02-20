@@ -38,7 +38,13 @@
 <div class="form-container">
     <h1>💊 {{ $patient->name }} さんのお薬登録</h1>
 
-    <form action="{{ route('medicines.store') }}" method="POST" enctype="multipart/form-data">
+    {{-- ★警告メッセージの表示エリア --}}
+    @if(session('error_message'))
+        <div style="background-color: #ffebee; color: #c62828; padding: 15px; border-radius: 8px; border: 1px solid #ef9a9a; margin-bottom: 20px; font-weight: bold;">
+            ⚠️ {{ session('error_message') }}
+        </div>
+    @endif
+    <form action="{{ route('medicines.store') }}" method="POST" enctype="multipart/form-data" onsubmit="return checkTimes()">
         @csrf
         <input type="hidden" name="patient_id" value="{{ $patient->id }}">
 
@@ -69,6 +75,16 @@
                     <span class="timing-label">寝る前 (21:00)</span>
                 </label>
             </div>
+
+            {{-- ★ここから追加：自由な時間入力エリア★ --}}
+            <div id="custom-times-container" style="margin-top: 10px;">
+                </div>
+
+            <button type="button" onclick="addCustomTime()" style="margin-top: 10px; background-color: #efebe9; border: 1px solid #d7ccc8; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.9em; color: #5d4037; font-weight: bold; width: 100%;">
+                ＋ 食間など、他の時間を追加する
+            </button>
+            {{-- ★ここまで追加★ --}}
+
             <p style="font-size: 0.8em; color: #666; margin-top: 5px;">※チェックした時間ごとに通知が届くようになります。</p>
         </div>
 
@@ -106,6 +122,27 @@
 </div>
 
 <script>
+// 自由な時間を追加する関数
+function addCustomTime() {
+    const container = document.getElementById('custom-times-container');
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '10px';
+    wrapper.style.marginBottom = '8px';
+    wrapper.style.padding = '10px';
+    wrapper.style.background = '#fff';
+    wrapper.style.border = '1px solid #ddd';
+    wrapper.style.borderRadius = '8px';
+
+    wrapper.innerHTML = `
+        <input type="time" name="times[]" class="input-field" style="width: 140px; padding: 5px;">
+        <span style="font-size: 0.8em; color: #666;">（自由指定）</span>
+        <button type="button" onclick="this.parentElement.remove()" style="color: #f44336; border: none; background: none; cursor: pointer; font-weight: bold; font-size: 1.2em; margin-left: auto;">✕</button>
+    `;
+    container.appendChild(wrapper);
+}
+
 function toggleDosageInput(mode) {
     const select = document.getElementById('dosage_select');
     const manualGroup = document.getElementById('dosage_manual_group');
@@ -118,5 +155,28 @@ function toggleDosageInput(mode) {
         manualGroup.style.display = 'none';
         if(mode === 'create') manualInput.value = ''; 
     }
+}
+function checkTimes() {
+    // 1. チェックボックスで選ばれている数を確認
+    const checkboxes = document.querySelectorAll('input[name="times[]"]:checked');
+    
+    // 2. 自由入力欄の値を確認
+    const customInputs = document.querySelectorAll('input[type="time"][name="times[]"]');
+    
+    let hasTime = checkboxes.length > 0;
+
+    // 自由入力欄が一つでも入力（空でない）されていればOK
+    customInputs.forEach(input => {
+        if (input.value !== "") {
+            hasTime = true;
+        }
+    });
+
+    if (!hasTime) {
+        // 時間が一つもなければ警告を出して送信を中止
+        alert("服用時間を設定してください。\n朝・昼・晩などを選ぶか、「時間を追加」から直接入力してください。");
+        return false; 
+    }
+    return true; 
 }
 </script>

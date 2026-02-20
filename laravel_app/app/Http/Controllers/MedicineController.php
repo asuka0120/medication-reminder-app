@@ -23,19 +23,31 @@ class MedicineController extends Controller
      */
     public function store(Request $request)
     {
-        // 分量の決定（選択肢 or 手入力）
+    // 1. 分量の決定（選択肢 or 手入力）
     $dosage = $request->dosage_select === 'other' ? $request->dosage_manual : $request->dosage_select;
 
-    // 写真の保存
+    // 2. 写真の保存
     $imagePath = null;
     if ($request->hasFile('image')) {
         $imagePath = $request->file('image')->store('medicines', 'public');
     }
 
-    // チェックされた時刻を取得（未選択ならデフォルトで 09:00 にするなどの配慮）
-    $selectedTimes = $request->input('times', ['09:00']);
+    // 3. 入力された時刻を取得
+    $inputTimes = $request->input('times', []);
 
-    // 時刻の数だけ保存を繰り返す（これが一括登録！）
+    // ★重要：自由入力欄で「空のまま」送信されたデータを除外する
+    $selectedTimes = array_filter($inputTimes, function($value) {
+        return !empty($value);
+    });
+
+    // ★重要：時刻が一つもない場合はエラーを返して中断する
+    if (empty($selectedTimes)) {
+        return back()
+            ->withInput() // 入力内容を保持したまま戻る
+            ->with('error_message', '服用時間が設定されていません。チェックボックスを選ぶか、自由な時間を入力してください。');
+    }
+
+    // 5. 時刻の数だけ保存を繰り返す（一括登録）
     foreach ($selectedTimes as $time) {
         \App\Models\Medicine::create([
             'patient_id'    => $request->patient_id,
@@ -47,7 +59,7 @@ class MedicineController extends Controller
     }
 
     return redirect('/patients')->with('success', 'お薬を一括登録しました。');
-    }
+}
 
     /**
      * お薬編集画面を表示する
@@ -63,33 +75,44 @@ class MedicineController extends Controller
      */
    public function update(Request $request, $id)
 {
-    // 編集対象のデータを一つ特定する（基準点として使用）
     $medicine = Medicine::findOrFail($id);
 
     // 1. バリデーション
     $request->validate([
         'medicine_name' => 'required|string|max:255',
-        'timings' => 'required|array', 
+        'timings' => 'required|array', // ここで配列であることを確認
         'dosage_select' => 'required',
         'image' => 'nullable|image|max:2048',
     ]);
 
-    // 2. 分量の決定
+    // 2. 分量と画像の処理（現状のまま）
     $dosage = $request->dosage_select === 'other' ? $request->dosage_manual : $request->dosage_select;
-
-    // 3. 画像の処理
     $imagePath = $medicine->image_path;
     if ($request->hasFile('image') && $request->file('image')->isValid()) {
         $imagePath = $request->file('image')->store('medicines', 'public');
     }
 
-    // 4. 【重要】同じ患者さんの、同じ名前のお薬スケジュールを一度すべて削除
+    // 3. 空文字を除外して「有効な時間」だけを取り出す
+    $selectedTimings = array_filter($request->timings, function($value) {
+        return !empty($value);
+    });
+
+    // 4. 有効な時間が一つもない場合は差し戻す
+    if (empty($selectedTimings)) {
+        return back()
+            ->withInput()
+            ->with('error_message', '服用時間が設定されていません。チェックボックスを選ぶか、自由な時間を入力してください。');
+    }
+
+    // --- ここからデータベース操作（トランザクション推奨ですが、まずはこのままでOK） ---
+
+    // 5. 古いスケジュールを一度削除（患者IDと薬名を指定して、その薬の全スケジュールを消す）
     Medicine::where('patient_id', $medicine->patient_id)
             ->where('medicine_name', $medicine->medicine_name)
             ->delete();
 
-    // 5. チェックされた時間（timings）の数だけ新規作成
-    foreach ($request->timings as $time) {
+    // 6. 新しく作成
+    foreach ($selectedTimings as $time) {
         Medicine::create([
             'patient_id' => $medicine->patient_id,
             'medicine_name' => $request->medicine_name,
