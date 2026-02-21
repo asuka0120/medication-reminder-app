@@ -151,15 +151,20 @@ class MedicineController extends Controller
         return redirect()->back();
     }
 
-    /**
-     * お薬をゴミ箱に移動する（ソフトデリート）
+   /**
+     * お薬に関連するすべてのスケジュールをゴミ箱に移動する（ソフトデリート）
      */
     public function destroy($id)
     {
+        // 1. まず、削除のきっかけになったレコードを特定
         $medicine = Medicine::findOrFail($id);
-        $medicine->delete(); 
+
+        // 2. 同じ患者さんの、同じ名前のお薬をすべてまとめて削除
+        Medicine::where('patient_id', $medicine->patient_id)
+                ->where('medicine_name', $medicine->medicine_name)
+                ->delete(); 
         
-        return back()->with('success', 'お薬をゴミ箱に移動しました。');
+        return back()->with('success', '「' . $medicine->medicine_name . '」の全スケジュールをゴミ箱に移動しました。');
     }
 
     /**
