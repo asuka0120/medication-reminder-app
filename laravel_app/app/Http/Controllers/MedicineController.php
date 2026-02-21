@@ -168,33 +168,48 @@ class MedicineController extends Controller
     }
 
     /**
-     * ゴミ箱に入っているお薬だけを表示する
+     * ゴミ箱の一覧を表示する（お薬名でグループ化）
      */
     public function trash()
     {
-        $trashedMedicines = Medicine::onlyTrashed()->with('patient')->get();
+        // 削除されたデータを取得し、患者IDとお薬名でグループ化
+        $trashedMedicines = Medicine::onlyTrashed()
+            ->with('patient')
+            ->get()
+            ->groupBy(function($item) {
+                return $item->patient_id . '-' . $item->medicine_name;
+            });
+
         return view('medicines.trash', compact('trashedMedicines'));
     }
 
     /**
-     * お薬をゴミ箱から元に戻す
+     * お薬の全スケジュールを一括で復元する
      */
     public function restore($id)
     {
-        $medicine = Medicine::withTrashed()->findOrFail($id);
-        $medicine->restore();
+        $medicine = Medicine::onlyTrashed()->findOrFail($id);
         
-        return redirect()->route('medicines.trash')->with('success', 'お薬を復元しました。');
+        Medicine::onlyTrashed()
+            ->where('patient_id', $medicine->patient_id)
+            ->where('medicine_name', $medicine->medicine_name)
+            ->restore();
+
+        return back()->with('success', 'お薬を復元しました。');
     }
 
     /**
-     * データベースから完全に削除する
+     * お薬の全スケジュールを一括で完全に削除する
      */
     public function forceDelete($id)
     {
-        $medicine = Medicine::withTrashed()->findOrFail($id);
-        $medicine->forceDelete();
-        
-        return redirect()->route('medicines.trash')->with('success', 'お薬を完全に削除しました。');
+        $medicine = Medicine::onlyTrashed()->findOrFail($id);
+
+        Medicine::onlyTrashed()
+            ->where('patient_id', $medicine->patient_id)
+            ->where('medicine_name', $medicine->medicine_name)
+            ->forceDelete();
+
+        return back()->with('success', 'お薬を完全に削除しました。');
     }
 }

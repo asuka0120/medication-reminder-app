@@ -14,19 +14,26 @@
             <th style="padding: 8px;">分量</th>
             <th style="padding: 8px;">操作</th>
         </tr>
-        @foreach ($trashedMedicines as $medicine)
+        {{-- コントローラーでgroupByした「お薬グループ」ごとにループ --}}
+        @foreach ($trashedMedicines as $group)
+            @php 
+                $first = $group->first(); 
+            @endphp
             <tr>
-                <td style="padding: 8px;">{{ $medicine->patient->name }}</td>
-                <td style="padding: 8px;">{{ $medicine->medicine_name }}</td>
-                <td style="padding: 8px;">{{ $medicine->dosage }}</td>
+                <td style="padding: 8px;">{{ $first->patient->name }}</td>
+                <td style="padding: 8px;">{{ $first->medicine_name }}</td>
+                <td style="padding: 8px;">{{ $first->dosage }}</td>
                 <td style="padding: 8px;">
-                    <form action="{{ route('medicines.restore', $medicine->id) }}" method="POST" style="display:inline;">
+                    {{-- グループの代表IDを使って、一括で元に戻す --}}
+                    <form action="{{ route('medicines.restore', $first->id) }}" method="POST" style="display:inline;">
                         @csrf
+                        {{-- コントローラー側をPATCHで待っている場合はそのままでOK --}}
                         @method('PATCH')
                         <button type="submit" style="background-color: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">元に戻す</button>
                     </form>
 
-                    <form action="{{ route('medicines.forceDelete', $medicine->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('本当に完全に削除しますか？この操作は取り消せません。');">
+                    {{-- グループの代表IDを使って、一括で完全に消す --}}
+                    <form action="{{ route('medicines.forceDelete', $first->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('「{{ $first->medicine_name }}」の全データを完全に削除しますか？この操作は取り消せません。');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" style="background-color: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">完全に消す</button>
