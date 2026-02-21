@@ -102,6 +102,20 @@
         text-align: center;
         position: relative;
     }
+    /* 飲み忘れ警告のスタイル */
+    .alert-overdue {
+        background-color: #ffebee !important; /* 薄い赤色 */
+    }
+    .text-overdue {
+        color: #d32f2f !important;
+        font-weight: bold;
+        animation: blink 2s infinite; /* ゆるやかに点滅 */
+    }
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
 </style>
 
 <h1>ご家族のための服薬管理（くすりサポート）</h1>
@@ -144,7 +158,6 @@
                     <td class="{{ $rowColorClass }}">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             @if($first->image_path)
-                                {{-- 写真タップで拡大 --}}
                                 <img src="{{ asset('storage/' . $first->image_path) }}" 
                                      class="clickable" 
                                      style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;"
@@ -157,22 +170,26 @@
                     <td class="{{ $rowColorClass }}">
                         @foreach ($group->sortBy('scheduled_time') as $medicine)
                             @php
-                                // 服用記録があるか確認し、あればデータを取得
                                 $adherence = $medicine->adherences()->where('taken_date', now()->toDateString())->first();
                                 $isTaken = (bool)$adherence;
+
+                                // ★飲み忘れ判定ロジック★
+                                $scheduledTime = \Carbon\Carbon::parse($medicine->scheduled_time);
+                                $isOverdue = !$isTaken && $scheduledTime->isBefore(now());
                             @endphp
-                            <div class="schedule-box">
-                                <span class="scheduled-time">
-                                    {{ \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}
+                            
+                            {{-- もし飲み忘れていたら 'alert-overdue' クラスを付与 --}}
+                            <div class="schedule-box {{ $isOverdue ? 'alert-overdue' : '' }}">
+                                <span class="scheduled-time {{ $isOverdue ? 'text-overdue' : '' }}">
+                                    {{ $scheduledTime->format('H:i') }}
                                 </span>
                                 
                                 <div class="action-area">
                                     @if($isTaken)
                                         <div style="display: flex; align-items: center; gap: 8px;">
-                                            {{-- 服用済みマークタップでメモ拡大 --}}
                                             <span style="color: #2e7d32; font-weight: bold;" 
                                                   class="status-taken clickable"
-                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}', '{{ $name }}', '{{ $first->image_path ? asset('storage/' . $first->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
+                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $scheduledTime->format('H:i') }}', '{{ $name }}', '{{ $first->image_path ? asset('storage/' . $first->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
                                                 ✅ 服用済み
                                             </span>
                                             <form action="{{ route('adherences.cancel') }}" method="POST" style="display:inline;">
@@ -182,16 +199,16 @@
                                             </form>
                                         </div>
                                     @else
-                                       <form action="{{ route('adherences.store') }}" method="POST" style="margin:0; display: flex; align-items: center; gap: 8px;">
-                                           @csrf
-                                           <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
-                                           <input type="text" name="note" placeholder="体調メモ" 
-                                                  style="font-size: 0.8em; padding: 6px; border-radius: 5px; border: 1px solid #ddd; width: 140px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
-                                           <button type="submit" class="btn" 
-                                                   style="background-color: #4CAF50; color: white; padding: 6px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
+                                        <form action="{{ route('adherences.store') }}" method="POST" style="margin:0; display: flex; align-items: center; gap: 8px;">
+                                            @csrf
+                                            <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
+                                            <input type="text" name="note" placeholder="{{ $isOverdue ? '⚠️ 飲み忘れ！' : '体調メモ' }}" 
+                                                   style="font-size: 0.8em; padding: 6px; border-radius: 5px; border: 1px solid {{ $isOverdue ? '#f44336' : '#ddd' }}; width: 140px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                            <button type="submit" class="btn" 
+                                                    style="background-color: {{ $isOverdue ? '#f44336' : '#4CAF50' }}; color: white; padding: 6px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
                                                 飲んだ！
-                                           </button>
-                                      </form>
+                                            </button>
+                                        </form>
                                     @endif
                                 </div>
                             </div>
