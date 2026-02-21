@@ -86,5 +86,25 @@ class PatientController extends Controller
      */
     public function edit(string $id) { }
     public function update(Request $request, string $id) { }
-    public function destroy(string $id) { }
+
+    /**
+     * 患者データを削除する
+     */
+    public function destroy($id)
+    {
+        $patient = Patient::findOrFail($id);
+
+        // お父さんに紐づくすべてのお薬（ゴミ箱に入っているものも含めて）ループ
+        foreach ($patient->medicines()->withTrashed()->get() as $medicine) {
+            // 1. 孫（服用記録）を完全に消去
+            $medicine->adherences()->forceDelete();
+            // 2. 子（お薬）を完全に消去
+            $medicine->forceDelete();
+        }
+
+        // 3. 最後に親（お父さん）を削除
+        $patient->delete();
+
+        return redirect()->route('patients.index')->with('success', '家族の登録を解除しました。');
+    }
 }

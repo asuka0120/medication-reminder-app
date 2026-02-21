@@ -132,7 +132,20 @@
 
 @foreach ($patients as $patient)
     <div class="patient-card">
-        <h3 style="margin-top: 0; color: #4e342e;">{{ $patient->name }}（{{ $patient->nickname }}）さん</h3>
+        {{-- ▼ ここから修正：名前と削除ボタンを横並びに --}}
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h3 style="margin-top: 0; color: #4e342e;">{{ $patient->name }}（{{ $patient->nickname }}）さん</h3>
+            
+            <form action="{{ route('patients.destroy', $patient->id) }}" method="POST" onsubmit="return confirm('{{ $patient->name }}さんのデータをすべて削除して登録を解除しますか？');">
+                @csrf
+                @method('DELETE')
+                {{-- 文字サイズを 1.1em に上げ、背景色を赤にして「ボタン」にしました --}}
+               <button type="submit" style="background-color: #e53935; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                   🗑 登録解除
+               </button>
+            </form>
+        </div>
+        {{-- ▲ ここまで --}}
         
         <div style="margin-bottom: 15px; display: flex; gap: 15px; align-items: center;">
             <a href="{{ route('medicines.create', ['patient_id' => $patient->id]) }}" style="color: #1976D2; font-weight: bold;">[＋ お薬を追加]</a>
