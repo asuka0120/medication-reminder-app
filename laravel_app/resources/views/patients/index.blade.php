@@ -146,6 +146,14 @@
             </form>
         </div>
         {{-- ▲ ここまで --}}
+
+        {{-- ▼ ここを追加：備考がある場合のみ表示する --}}
+    @if($patient->memo)
+        <div style="background-color: #fdf5e6; padding: 10px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #d7ccc8; color: #5d4037;">
+            <strong>📝 備考：</strong>{{ $patient->memo }}
+        </div>
+    @endif
+    {{-- ▲ ここまで --}}
         
         <div style="margin-bottom: 15px; display: flex; gap: 15px; align-items: center;">
             <a href="{{ route('medicines.create', ['patient_id' => $patient->id]) }}" style="color: #1976D2; font-weight: bold;">[＋ お薬を追加]</a>
