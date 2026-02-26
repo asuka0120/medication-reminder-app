@@ -105,7 +105,7 @@
                                 {{-- 写真タップで拡大 --}}
                                 <img src="{{ asset('storage/' . $medicine->image_path) }}" 
                                      class="medicine-thumb"
-                                     onclick="showBigDisplay('お薬の写真', '{{ $medicine->medicine_name }}', '{{ asset('storage/' . $medicine->image_path) }}', '')">
+                                     onclick="showBigDisplay('お薬の写真', '{{ $medicine->medicine_name }}', '{{ asset('storage/' . $medicine->image_path) }}', '', true)">
                             @endif
                             <div>
                                 <div style="font-size: 0.9em;">{{ $medicine->medicine_name }}</div>
@@ -152,10 +152,17 @@
 </div>
 
 <script>
-function showBigDisplay(time, name, imagePath, note) {
-    document.getElementById('modal-time').innerText = time + ' の記録';
+function showBigDisplay(time, name, imagePath, note, isPhotoOnly = false) {
+    document.getElementById('modal-time').innerText = isPhotoOnly ? time : time + ' の記録';
     document.getElementById('modal-name').innerText = name;
-    document.getElementById('modal-note').innerText = note ? note : '（メモはありません）';
+    
+    const noteBox = document.getElementById('modal-note-box');
+    if (isPhotoOnly) {
+        noteBox.style.display = 'none';
+    } else {
+        noteBox.style.display = 'block';
+        document.getElementById('modal-note').innerText = note ? note : '（メモはありません）';
+    }
     
     const imgTag = document.getElementById('modal-image');
     if (imagePath) {
@@ -164,7 +171,6 @@ function showBigDisplay(time, name, imagePath, note) {
     } else {
         imgTag.style.display = 'none';
     }
-    
     document.getElementById('big-display-area').style.display = 'block';
 }
 

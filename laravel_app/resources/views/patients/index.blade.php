@@ -182,7 +182,7 @@
                                 <img src="{{ asset('storage/' . $first->image_path) }}" 
                                      class="clickable" 
                                      style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;"
-                                     onclick="showBigDisplay('お薬の写真', '{{ $name }}', '{{ asset('storage/' . $first->image_path) }}', '')">
+                                     onclick="showBigDisplay('お薬の写真', '{{ $name }}', '{{ asset('storage/' . $first->image_path) }}', '', true)">
                             @endif
                             <strong class="medicine-name" style="font-size: 1.1em;">{{ $name }}</strong>
                         </div>
@@ -264,20 +264,28 @@
 
 <script>
     /* モーダル表示スクリプト */
-    function showBigDisplay(time, name, imagePath, note) {
-        document.getElementById('modal-time').innerText = time + ' の記録';
-        document.getElementById('modal-name').innerText = name;
+    function showBigDisplay(time, name, imagePath, note, isPhotoOnly = false) {
+    document.getElementById('modal-time').innerText = isPhotoOnly ? time : time + ' の記録';
+    document.getElementById('modal-name').innerText = name;
+    
+    // メモボックスの表示・非表示を切り替え
+    const noteBox = document.getElementById('modal-note-box');
+    if (isPhotoOnly) {
+        noteBox.style.display = 'none'; // 写真だけの時は隠す
+    } else {
+        noteBox.style.display = 'block'; // それ以外は表示
         document.getElementById('modal-note').innerText = note ? note : '（メモはありません）';
-        
-        const imgTag = document.getElementById('modal-image');
-        if (imagePath) {
-            imgTag.src = imagePath;
-            imgTag.style.display = 'block';
-        } else {
-            imgTag.style.display = 'none';
-        }
-        document.getElementById('big-display-area').style.display = 'block';
     }
+    
+    const imgTag = document.getElementById('modal-image');
+    if (imagePath) {
+        imgTag.src = imagePath;
+        imgTag.style.display = 'block';
+    } else {
+        imgTag.style.display = 'none';
+    }
+    document.getElementById('big-display-area').style.display = 'block';
+}
 
     function hideBigDisplay() {
         document.getElementById('big-display-area').style.display = 'none';
