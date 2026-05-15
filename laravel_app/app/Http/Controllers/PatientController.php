@@ -13,8 +13,8 @@ class PatientController extends Controller
      */
     public function index()
     {
-        // 患者さんと、その人に紐づくお薬（medicines）を一緒に取得する
-        $patients = Patient::with('medicines')->get();
+        // ログインしているユーザーの患者さんだけを取得する
+        $patients = auth()->user()->patients()->with('medicines')->get();
         
         return view('patients.index', compact('patients'));
     }
@@ -33,6 +33,7 @@ class PatientController extends Controller
     public function store(Request $request)
     {
         $patient = new Patient();
+        $patient->user_id = auth()->id(); // ログインユーザーのIDを紐づける
         $patient->name = $request->name;
         $patient->nickname = $request->nickname;
         $patient->memo = $request->memo;
@@ -46,6 +47,9 @@ class PatientController extends Controller
      */
     public function show(Request $request, Patient $patient)
     {
+        // ログインユーザーの患者かどうか確認する（他人のデータは見せない）
+        abort_if($patient->user_id !== auth()->id(), 403);
+
         // 1. 表示したい月を取得（指定がなければ今月）
         $monthParam = $request->query('month', now()->format('Y-m'));
         $date = Carbon::parse($monthParam . '-01');
@@ -72,12 +76,12 @@ class PatientController extends Controller
 
         // 5. ビューに必要な変数をすべて渡す
         return view('patients.show', compact(
-            'patient', 
-            'dates', 
-            'currentYear', 
-            'currentMonth', 
-            'prevMonth', 
-            'nextMonth'
+            'patient',      // 患者データ
+            'dates',        // カレンダーに表示する日付の配列
+            'currentYear',  // 表示中の年
+            'currentMonth', // 表示中の月
+            'prevMonth',    // 前月のリンク用（例：2026-04）
+            'nextMonth'     // 次月のリンク用（例：2026-06）
         ));
     }
 
@@ -93,6 +97,9 @@ class PatientController extends Controller
     public function destroy($id)
     {
         $patient = Patient::findOrFail($id);
+
+        // ログインユーザーの患者かどうか確認する（他人のデータは削除させない）
+        abort_if($patient->user_id !== auth()->id(), 403);
 
         // お父さんに紐づくすべてのお薬（ゴミ箱に入っているものも含めて）ループ
         foreach ($patient->medicines()->withTrashed()->get() as $medicine) {
