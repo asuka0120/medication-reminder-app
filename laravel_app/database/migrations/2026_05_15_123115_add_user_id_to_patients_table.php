@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('medicines', function (Blueprint $table) {
-            //
-        });
+    Schema::table('patients', function (Blueprint $table) {
+        $table->foreignId('user_id')->nullable()->after('id')->constrained()->cascadeOnDelete();
+    });
     }
 
     /**
@@ -21,8 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('medicines', function (Blueprint $table) {
-            $table->string('image_path')->nullable()->after('dosage'); // dosageの後ろに追加
+        Schema::table('patients', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropColumn('user_id');
         });
     }
 };

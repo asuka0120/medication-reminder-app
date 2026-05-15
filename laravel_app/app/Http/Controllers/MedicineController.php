@@ -79,7 +79,7 @@ class MedicineController extends Controller
 
     // 1. バリデーション
     $request->validate([
-        'medicine_name' => 'required|string|max:255',
+        'medicine_name' => 'required|string|max:50',
         'timings' => 'required|array', // ここで配列であることを確認
         'dosage_select' => 'required',
         'image' => 'nullable|image|max:2048',
