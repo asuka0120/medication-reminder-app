@@ -3,7 +3,6 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\MedicineController;
-use App\Http\Controllers\AdherenceController;
 use App\Http\Controllers\TrashController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,8 +39,9 @@ Route::middleware('auth')->group(function () {
     // 薬管理
     Route::resource('medicines', MedicineController::class);
 
-    // 服薬記録
-    Route::resource('adherences', AdherenceController::class);
+    // 服薬記録（MedicineControllerで処理）
+    Route::post('/medicines/take', [MedicineController::class, 'take'])->name('medicines.take');
+    Route::post('/medicines/cancel', [MedicineController::class, 'cancel'])->name('medicines.cancel');
 
     // ゴミ箱
     Route::get('/trash', [TrashController::class, 'index'])->name('trash.index');

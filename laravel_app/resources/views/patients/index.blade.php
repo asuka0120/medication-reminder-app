@@ -213,14 +213,14 @@
                                                   onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $scheduledTime->format('H:i') }}', '{{ $name }}', '{{ $first->image_path ? asset('storage/' . $first->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
                                                 ✅ 服用済み
                                             </span>
-                                            <form action="{{ route('adherences.cancel') }}" method="POST" style="display:inline;">
+                                            <form action="{{ route('medicines.cancel') }}" method="POST" style="display:inline;">
                                                 @csrf
                                                 <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
                                                 <button type="submit" class="btn-danger" style="padding: 2px 8px; font-size: 10px; border-radius: 4px;">取消</button>
                                             </form>
                                         </div>
                                     @else
-                                        <form action="{{ route('adherences.store') }}" method="POST" style="margin:0; display: flex; align-items: center; gap: 8px;">
+                                        <form action="{{ route('medicines.take') }}" method="POST" style="margin:0; display: flex; align-items: center; gap: 8px;">
                                             @csrf
                                             <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
                                             <input type="text" name="note" placeholder="{{ $isOverdue ? '⚠️ 飲み忘れ！' : '体調メモ' }}" 
