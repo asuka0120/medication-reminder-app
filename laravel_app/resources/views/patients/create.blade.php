@@ -16,14 +16,18 @@
             {{-- お名前入力 --}}
             <div style="margin-bottom: 25px;">
                 <label for="name" style="display: block; font-weight: bold; margin-bottom: 12px; font-size: 18px; color: #5D4037;">お名前（フルネーム）:</label>
-                <input type="text" name="name" id="name" placeholder="例：山田 太郎" required 
+                <input type="text" name="name" id="name" placeholder="例：山田 太郎"  
                     style="width: 100%; padding: 15px; font-size: 18px; border: 2px solid #D7CCC8; border-radius: 10px; box-sizing: border-box; outline: none;">
-            </div>
+                {{-- エラーメッセージ表示 --}}
+    @error('name')
+        <p style="color: #d32f2f; font-size: 14px; margin-top: 8px;">{{ $message }}</p>
+    @enderror
+                </div>
 
             {{-- 呼び名入力 --}}
             <div style="margin-bottom: 25px;">
                 <label for="nickname" style="display: block; font-weight: bold; margin-bottom: 12px; font-size: 18px; color: #5D4037;">ご家族からの呼び名:</label>
-                <input type="text" name="nickname" id="nickname" placeholder="例：おじいちゃん" required 
+                <input type="text" name="nickname" id="nickname" placeholder="例：おじいちゃん" 
                     style="width: 100%; padding: 15px; font-size: 18px; border: 2px solid #D7CCC8; border-radius: 10px; box-sizing: border-box; outline: none;">
             </div>
 

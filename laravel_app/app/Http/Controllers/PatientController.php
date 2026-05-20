@@ -32,6 +32,14 @@ class PatientController extends Controller
      */
     public function store(Request $request)
     {
+        // バリデーション（入力値のチェック）
+    $request->validate([
+        'name' => 'required|string|max:50', // 名前は必須・文字列・50文字以内
+    ], [
+        'name.required' => '名前は必須です。',
+        'name.max'      => '名前は50文字以内で入力してください。',
+    ]);
+
         $patient = new Patient();
         $patient->user_id = auth()->id(); // ログインユーザーのIDを紐づける
         $patient->name = $request->name;
@@ -86,10 +94,43 @@ class PatientController extends Controller
     }
 
     /**
-     * 以降、必要に応じて実装（現在は空）
-     */
-    public function edit(string $id) { }
-    public function update(Request $request, string $id) { }
+ * 患者情報の編集画面を表示する
+ */
+public function edit(string $id)
+{
+    $patient = Patient::findOrFail($id);
+
+    // ログインユーザーの患者かどうか確認する
+    abort_if($patient->user_id !== auth()->id(), 403);
+
+    return view('patients.edit', compact('patient'));
+}
+
+/**
+ * 患者情報を更新する
+ */
+public function update(Request $request, string $id)
+{
+    $patient = Patient::findOrFail($id);
+
+    // ログインユーザーの患者かどうか確認する
+    abort_if($patient->user_id !== auth()->id(), 403);
+
+    // バリデーション
+    $request->validate([
+        'name' => 'required|string|max:50',
+    ], [
+        'name.required' => '名前は必須です。',
+        'name.max'      => '名前は50文字以内で入力してください。',
+    ]);
+
+    $patient->name     = $request->name;
+    $patient->nickname = $request->nickname;
+    $patient->memo     = $request->memo;
+    $patient->save();
+
+    return redirect('/patients')->with('success', '家族情報を更新しました。');
+}
 
     /**
      * 患者データを削除する

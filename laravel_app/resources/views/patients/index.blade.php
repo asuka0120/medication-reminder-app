@@ -133,17 +133,26 @@
 @foreach ($patients as $patient)
     <div class="patient-card">
         {{-- ▼ ここから修正：名前と削除ボタンを横並びに --}}
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h3 style="margin-top: 0; color: #4e342e;">{{ $patient->name }}（{{ $patient->nickname }}）さん</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin-top: 0; color: #4e342e;">
+    {{ $patient->name }}{{ $patient->nickname ? '（' . $patient->nickname . '）' : '' }} さん
+</h3>
             
-            <form action="{{ route('patients.destroy', $patient->id) }}" method="POST" onsubmit="return confirm('{{ $patient->name }}さんのデータをすべて削除して登録を解除しますか？');">
-                @csrf
-                @method('DELETE')
-                {{-- 文字サイズを 1.1em に上げ、背景色を赤にして「ボタン」にしました --}}
-               <button type="submit" style="background-color: #e53935; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                   🗑 登録解除
-               </button>
-            </form>
+    <div style="display: flex; gap: 10px; align-items: flex-start;">
+    {{-- 編集ボタン --}}
+    <a href="{{ route('patients.edit', $patient->id) }}" 
+       style="background-color: #1e88e5; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-decoration: none; display: inline-block; line-height: normal;">
+        ✏️ 編集
+    </a>
+    {{-- 登録解除ボタン --}}
+    <form action="{{ route('patients.destroy', $patient->id) }}" method="POST" onsubmit="return confirm('{{ $patient->name }}さんのデータをすべて削除して登録を解除しますか？');">
+        @csrf
+        @method('DELETE')
+        <button type="submit" style="background-color: #e53935; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            🗑 登録解除
+        </button>
+    </form>
+</div>
         </div>
         {{-- ▲ ここまで --}}
 
