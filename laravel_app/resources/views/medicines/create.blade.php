@@ -49,10 +49,15 @@
         <input type="hidden" name="patient_id" value="{{ $patient->id }}">
 
         {{-- 1. お薬名 --}}
-        <div class="form-group">
-            <label>お薬の名前:</label>
-            <input type="text" name="medicine_name" required placeholder="例：アムロジピン" class="input-field">
-        </div>
+<div class="form-group">
+    <label>お薬の名前:</label>
+    <input type="text" name="medicine_name" placeholder="例：アムロジピン" class="input-field">
+    {{-- エラーメッセージ表示 --}}
+    @error('medicine_name')
+        <p style="color: #d32f2f; font-size: 14px; margin-top: 8px;">{{ $message }}</p>
+    @enderror
+    
+</div>
 
         {{-- 2. 服用タイミング（一括登録の肝） --}}
         <div class="form-group">
@@ -107,10 +112,14 @@
         </div>
 
         {{-- 4. 写真 --}}
-        <div class="form-group">
-            <label>お薬の写真（任意）:</label>
-            <input type="file" name="image" accept="image/*" class="input-field">
-        </div>
+<div class="form-group">
+    <label>お薬の写真（任意）:</label>
+    <input type="file" name="image" accept="image/*" class="input-field">
+    {{-- エラーメッセージ表示 --}}
+    @error('image')
+        <p style="color: #d32f2f; font-size: 14px; margin-top: 8px;">{{ $message }}</p>
+    @enderror
+</div>
 
         <button type="submit" class="btn-submit">
             まとめて登録する

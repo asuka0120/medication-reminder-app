@@ -32,6 +32,18 @@ class MedicineController extends Controller
         // ログインユーザーの患者かどうか確認する（他人の患者に薬を登録できない）
         abort_if($patient->user_id !== auth()->id(), 403);
 
+        // バリデーション
+    $request->validate([
+    'medicine_name' => 'required|string|max:50',
+    'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+], [
+    'medicine_name.required' => '薬名は必須です。',
+    'medicine_name.max'      => '薬名は50文字以内で入力してください。',
+    'image.image'            => '画像ファイルを選択してください。',
+    'image.mimes'            => '対応していないファイル形式です。JPEGまたはPNGをアップロードしてください。',
+    'image.max'              => 'ファイルサイズは2MB以下にしてください。',
+]);
+
         // 1. 分量の決定（選択肢 or 手入力）
         $dosage = $request->dosage_select === 'other' ? $request->dosage_manual : $request->dosage_select;
 
