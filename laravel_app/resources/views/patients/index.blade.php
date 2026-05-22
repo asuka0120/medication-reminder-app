@@ -219,7 +219,7 @@
                                         <div style="display: flex; align-items: center; gap: 8px;">
                                             <span style="color: #2e7d32; font-weight: bold;" 
                                                   class="status-taken clickable"
-                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $scheduledTime->format('H:i') }}', '{{ $name }}', '{{ $first->image_path ? asset('storage/' . $first->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
+                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : $scheduledTime->format('H:i') }}', '{{ $name }}', '{{ $first->image_path ? asset('storage/' . $first->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
                                                 ✅ 服用済み
                                             </span>
                                             <form action="{{ route('medicines.cancel') }}" method="POST" style="display:inline;">

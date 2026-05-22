@@ -10,7 +10,7 @@ class Adherence extends Model
     use HasFactory;
 
     // まとめてデータを保存することを許可する設定
-    protected $fillable = ['medicine_id', 'taken_date', 'note']; // note を追加
+    protected $fillable = ['medicine_id', 'taken_date', 'taken_time', 'note']; // note を追加
 
     // どのお薬の記録なのかを紐付ける設定
     public function medicine()

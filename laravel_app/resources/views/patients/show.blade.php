@@ -120,7 +120,7 @@
                         <td class="{{ $date->isToday() ? 'today-highlight' : '' }}">
                             @if($adherence)
                                 {{-- ✅マークタップで詳細拡大 --}}
-                                <div class="check-box" onclick="showBigDisplay('{{ $date->format('n月j日') }} {{ \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note) }}')">✅</div>
+                                <div class="check-box" onclick="showBigDisplay('{{ $date->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note) }}')">✅</div>
                                 @if($adherence->note)
                                     <div style="font-size: 0.7em; color: #666; line-height: 1.1;">{{ $adherence->note }}</div>
                                 @endif

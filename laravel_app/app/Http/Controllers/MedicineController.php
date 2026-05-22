@@ -164,6 +164,7 @@ class MedicineController extends Controller
         Adherence::create([
             'medicine_id' => $request->medicine_id,
             'taken_date' => now()->toDateString(),
+            'taken_time'  => now()->format('H:i:s'), // 実際に押した時刻を保存
             'note' => $request->note,
         ]);
 
