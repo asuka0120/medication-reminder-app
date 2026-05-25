@@ -123,9 +123,9 @@
 <div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
     <a href="/patients/create" style="text-decoration: none; font-weight: bold; color: #1976D2;">＋ 新しく家族を登録する</a>
     <a href="{{ route('trash.index') }}" style="color: #607D8B; text-decoration: none;">[ 🗑 ゴミ箱を見る ]</a>
-    <button id="notify-btn" onclick="enableNotifications()" class="btn" style="background-color: #ff9800; color: white; min-width: 180px;">
-        🔔 通知設定を確認中...
-    </button>
+    <button id="notify-btn" onclick="toggleNotifications()" class="btn" style="background-color: #ff9800; color: white; min-width: 180px;">
+    🔔 通知設定を確認中...
+</button>
 </div>
 
 <hr style="border: 0; border-top: 1px solid #d7ccc8; margin: 20px 0;">
@@ -301,51 +301,72 @@
     }
 
     /* 通知設定スクリプト */
-    document.addEventListener('DOMContentLoaded', function() {
-        updateNotificationButton();
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    updateNotificationButton();
+});
 
-    function updateNotificationButton() {
-        const btn = document.getElementById('notify-btn');
-        if (!btn) return;
-        if (Notification.permission === 'granted') {
-            btn.style.backgroundColor = '#4CAF50';
-            btn.innerHTML = '✅ 通知は有効です';
-        } else if (Notification.permission === 'denied') {
-            btn.style.backgroundColor = '#f44336';
-            btn.innerHTML = '❌ 通知がブロックされています';
-        } else {
-            btn.style.backgroundColor = '#ff9800';
-            btn.innerHTML = '🔔 通知設定をオンにする';
-        }
+function updateNotificationButton() {
+    const btn = document.getElementById('notify-btn');
+    if (!btn) return;
+    
+    const notifyEnabled = localStorage.getItem('notifyEnabled') !== 'false';
+    
+    if (Notification.permission === 'denied') {
+        btn.style.backgroundColor = '#f44336';
+        btn.innerHTML = '❌ 通知がブロックされています';
+    } else if (Notification.permission === 'granted' && notifyEnabled) {
+        btn.style.backgroundColor = '#4CAF50';
+        btn.innerHTML = '✅ 通知は有効です';
+    } else {
+        btn.style.backgroundColor = '#9e9e9e';
+        btn.innerHTML = '🔕 通知はOFFです';
     }
+}
 
-    function enableNotifications() {
-        Notification.requestPermission().then(permission => {
-            updateNotificationButton();
+function toggleNotifications() {
+    if (Notification.permission === 'denied') {
+        alert('通知の許可が必要です。ブラウザの設定から通知を許可してください。');
+        return;
+    }
+    
+    const notifyEnabled = localStorage.getItem('notifyEnabled') !== 'false';
+    
+    if (!notifyEnabled) {
+        // OFFからONへ
+        Notification.requestPermission().then(function(permission) {
             if (permission === 'granted') {
+                localStorage.setItem('notifyEnabled', 'true');
+                updateNotificationButton();
                 new Notification("くすりサポート", { body: "通知が有効になりました！" });
             }
         });
+    } else {
+        // ONからOFFへ
+        localStorage.setItem('notifyEnabled', 'false');
+        updateNotificationButton();
     }
+}
 
-    /* 服薬チェック・通知送信 */
-    setInterval(() => {
-        if (Notification.permission !== 'granted') return;
-        const now = new Date();
-        const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
-                            now.getMinutes().toString().padStart(2, '0');
+/* 服薬チェック・通知送信 */
+setInterval(() => {
+    if (Notification.permission !== 'granted') return;
+    if (localStorage.getItem('notifyEnabled') === 'false') return;
+    
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
+                        now.getMinutes().toString().padStart(2, '0');
 
-        document.querySelectorAll('.schedule-box').forEach(box => {
-            const timeVal = box.querySelector('.scheduled-time').innerText.trim();
-            const isTaken = box.querySelector('.status-taken');
-            
-            if (timeVal === currentTime && !isTaken) {
-                const medicineName = box.closest('tr').querySelector('.medicine-name').innerText;
-                new Notification("お薬の時間です", {
-                    body: medicineName + " を飲む時間ですよ。",
-                });
-            }
-        });
-    }, 60000);
+    document.querySelectorAll('.schedule-box').forEach(box => {
+        const timeVal = box.querySelector('.scheduled-time').innerText.trim();
+        const isTaken = box.querySelector('.status-taken');
+        
+        if (timeVal === currentTime && !isTaken) {
+            const medicineName = box.closest('tr').querySelector('.medicine-name').innerText;
+            new Notification("お薬の時間です", {
+                body: medicineName + " を飲む時間ですよ。",
+            });
+        }
+    });
+}, 60000);
+  
 </script>
