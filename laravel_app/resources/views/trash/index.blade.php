@@ -44,7 +44,7 @@
             <tr>
                 <td>
     {{ $first->patient->name ?? '不明' }}
-    @if($first->patient->nickname)
+    @if($first->patient && $first->patient->nickname)
         <br><small style="color: #999;">（{{ $first->patient->nickname }}）</small>
     @endif
 </td>
@@ -79,7 +79,12 @@
         </tr>
         @foreach($trashedPatients as $patient)
             <tr>
-                <td>{{ $patient->name }}</td>
+                <td>
+    {{ $patient->name }}
+    @if($patient->nickname)
+        <br><small style="color: #999;">（{{ $patient->nickname }}）</small>
+    @endif
+</td>
                 <td>{{ $patient->memo ?? 'なし' }}</td>
                 <td>
                     <form action="{{ route('trash.restore', $patient->id) }}" method="POST" style="display:inline;">

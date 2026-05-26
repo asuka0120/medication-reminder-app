@@ -11,10 +11,12 @@ class TrashController extends Controller
     // ゴミ箱一覧
     public function index()
     {
-        $trashedMedicines = Medicine::onlyTrashed()->with('patient')->get()
-            ->groupBy(function($item) {
-                return $item->patient_id . '-' . $item->medicine_name;
-            });
+       $trashedMedicines = Medicine::onlyTrashed()->with(['patient' => function($query) {
+    $query->withTrashed();
+}])->get()
+->groupBy(function($item) {
+    return $item->patient_id . '-' . $item->medicine_name;
+});
         $trashedPatients = Patient::onlyTrashed()->get();
         return view('trash.index', compact('trashedMedicines', 'trashedPatients'));
     }
@@ -33,6 +35,10 @@ class TrashController extends Controller
         $patient = Patient::onlyTrashed()->find($id);
         if ($patient) {
             $patient->restore();
+             // 関連する薬も一緒に復元する
+    Medicine::onlyTrashed()
+        ->where('patient_id', $patient->id)
+        ->restore();
             return redirect()->route('trash.index')->with('success', '患者を復元しました。');
         }
         return redirect()->route('trash.index');

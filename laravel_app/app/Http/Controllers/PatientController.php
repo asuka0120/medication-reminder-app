@@ -136,23 +136,18 @@ public function update(Request $request, string $id)
      * 患者データを削除する
      */
     public function destroy($id)
-    {
-        $patient = Patient::findOrFail($id);
+{
+    $patient = Patient::findOrFail($id);
 
-        // ログインユーザーの患者かどうか確認する（他人のデータは削除させない）
-        abort_if($patient->user_id !== auth()->id(), 403);
+    // ログインユーザーの患者かどうか確認する
+    abort_if($patient->user_id !== auth()->id(), 403);
 
-        // お父さんに紐づくすべてのお薬（ゴミ箱に入っているものも含めて）ループ
-        foreach ($patient->medicines()->withTrashed()->get() as $medicine) {
-            // 1. 孫（服用記録）を完全に消去
-            $medicine->adherences()->forceDelete();
-            // 2. 子（お薬）を完全に消去
-            $medicine->forceDelete();
-        }
+    // 関連する薬をソフトデリート（ゴミ箱に移動）
+    $patient->medicines()->delete();
 
-        // 3. 最後に親（お父さん）を削除
-        $patient->delete();
+    // 患者をソフトデリート（ゴミ箱に移動）
+    $patient->delete();
 
-        return redirect()->route('patients.index')->with('success', '家族の登録を解除しました。');
-    }
+    return redirect()->route('patients.index')->with('success', '家族の登録を解除しました。');
+}
 }
