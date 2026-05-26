@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes; // 追加
 
 class Patient extends Model
 {
     use HasFactory;
+     use SoftDeletes; // 追加
 
     /**
      * 登録・編集を許可する列の一覧
