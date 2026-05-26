@@ -42,11 +42,11 @@
         padding: 8px 15px;
         text-decoration: none;
         display: inline-block;
-        font-size: 14px;
+        font-size: 16px;
         transition: 0.3s;
     }
     .btn-danger { background-color: #e53935; color: white; }
-    .btn-edit { background-color: #1e88e5; color: white; }
+    .btn-edit { background-color: #7B1FA2; color: white; }
 
     /* スケジュールを中央寄せで配置するスタイル */
     .schedule-box {
@@ -245,10 +245,10 @@
                         @endforeach
                     </td>
                     <td style="text-align: center;" class="{{ $rowColorClass }}">
-                        <a href="{{ route('medicines.edit', $first->id) }}" class="btn btn-edit" style="font-size: 12px; margin-bottom: 5px; width: 60px;">編集</a>
+                        <a href="{{ route('medicines.edit', $first->id) }}" class="btn btn-edit" style="font-size: 16px; margin-bottom: 5px; width: 60px;">編集</a>
                         <form action="{{ route('medicines.destroy', $first->id) }}" method="POST" onsubmit="return confirm('同じ名前のスケジュールを全て削除しますか？');">
                             @csrf @method('DELETE')
-                            <button type="submit" class="btn btn-danger" style="font-size: 12px; width: 60px;">削除</button>
+                            <button type="submit" class="btn btn-danger" style="font-size: 16px; width: 90px;">削除</button>
                         </form>
                     </td>
                 </tr>
