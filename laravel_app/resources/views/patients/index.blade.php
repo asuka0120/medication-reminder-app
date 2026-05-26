@@ -35,15 +35,15 @@
         vertical-align: middle;
     }
     .btn {
-        font-weight: bold;
-        border-radius: 8px;
-        cursor: pointer;
-        border: none;
-        padding: 8px 15px;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-        transition: 0.3s;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    padding: 14px 15px;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    transition: 0.3s;
     }
     .btn-danger { background-color: #e53935; color: white; }
     .btn-edit { background-color: #7B1FA2; color: white; }
@@ -141,14 +141,14 @@
     <div style="display: flex; gap: 10px; align-items: flex-start;">
     {{-- 編集ボタン --}}
     <a href="{{ route('patients.edit', $patient->id) }}" 
-       style="background-color: #1e88e5; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-decoration: none; display: inline-block; line-height: normal;">
+       style="background-color: #1e88e5; color: white; padding: 14px 16px; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-decoration: none; display: inline-block; line-height: normal;">
         ✏️ 編集
     </a>
     {{-- 登録解除ボタン --}}
     <form action="{{ route('patients.destroy', $patient->id) }}" method="POST" onsubmit="return confirm('{{ $patient->name }}さんのデータをすべて削除して登録を解除しますか？');">
         @csrf
         @method('DELETE')
-        <button type="submit" style="background-color: #e53935; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <button type="submit" style="background-color: #e53935; color: white; border: none; padding: 14px 16px; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             🗑 登録解除
         </button>
     </form>
@@ -235,7 +235,7 @@
                                             <input type="text" name="note" placeholder="{{ $isOverdue ? '⚠️ 飲み忘れ！' : '体調メモ' }}" 
                                                    style="font-size: 0.8em; padding: 6px; border-radius: 5px; border: 1px solid {{ $isOverdue ? '#f44336' : '#ddd' }}; width: 140px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
                                             <button type="submit" class="btn" 
-                                                    style="background-color: {{ $isOverdue ? '#f44336' : '#4CAF50' }}; color: white; padding: 6px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
+                                                    style="background-color: {{ $isOverdue ? '#f44336' : '#4CAF50' }}; color: white; padding: 14px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
                                                 飲んだ！
                                             </button>
                                         </form>
