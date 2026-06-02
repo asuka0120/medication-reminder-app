@@ -29,6 +29,12 @@
 
             <!-- Page Content -->
             <main>
+                @if(session("success"))
+                <div style="background-color:#d4edda;color:#155724;padding:12px 20px;margin-bottom:16px;border-radius:6px;border:1px solid #c3e6cb;">{{ session("success") }}</div>
+                @endif
+                @if(session("error"))
+                <div style="background-color:#f8d7da;color:#721c24;padding:12px 20px;margin-bottom:16px;border-radius:6px;border:1px solid #f5c6cb;">{{ session("error") }}</div>
+                @endif
                 {{ $slot }}
             </main>
         </div>
