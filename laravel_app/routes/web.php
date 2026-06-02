@@ -23,10 +23,10 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'nocache'])->name('dashboard');
 
 // ログインしているユーザーだけアクセスできるルート
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'nocache'])->group(function () {
 
     // プロフィール
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
