@@ -55,6 +55,7 @@ class TrashController extends Controller
                 ->forceDelete();
             return redirect()->route('trash.index')->with('success', 'お薬を完全に削除しました。');
         }
+        
         $patient = Patient::onlyTrashed()->find($id);
 if ($patient) {
     // 関連する薬を先に完全削除
