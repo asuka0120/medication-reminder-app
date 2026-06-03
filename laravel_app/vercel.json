@@ -4,14 +4,14 @@
     "buildCommand": "",
     "outputDirectory": "public",
     "functions": {
-        "handler/index.php": {
+        "api/index.php": {
             "runtime": "vercel-php@0.7.1"
         }
     },
     "rewrites": [
         {
             "source": "/(.*)",
-            "destination": "/handler/index.php"
+            "destination": "/api/index.php"
         }
     ],
     "env": {
