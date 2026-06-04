@@ -7,20 +7,9 @@
     },
     "routes": [
         {
-            "src": "/(css|js|images|build)/(.*)",
-            "dest": "/public/$1/$2"
-        },
-        {
             "src": "/(.*)",
             "dest": "/api/index.php"
         }
     ],
-    "outputDirectory": "public",
-    "env": {
-        "APP_CONFIG_CACHE": "/tmp/config.php",
-        "VIEW_COMPILED_PATH": "/tmp",
-        "CACHE_DRIVER": "array",
-        "SESSION_DRIVER": "cookie",
-        "LOG_CHANNEL": "stderr"
-    }
+    "outputDirectory": "public"
 }
