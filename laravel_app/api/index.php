@@ -1,9 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
-echo "PHP Version: " . PHP_VERSION . "\n";
-echo "Document Root: " . __DIR__ . "\n";
 
 define('LARAVEL_START', microtime(true));
 require __DIR__ . '/../vendor/autoload.php';
