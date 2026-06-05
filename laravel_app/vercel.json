@@ -7,9 +7,16 @@
     },
     "routes": [
         {
+            "src": "/favicon.ico",
+            "dest": "/public/favicon.ico"
+        },
+        {
+            "src": "/(.+\\..+)",
+            "dest": "/public/$1"
+        },
+        {
             "src": "/(.*)",
             "dest": "/api/index.php"
         }
-    ],
-    "outputDirectory": "public"
+    ]
 }
