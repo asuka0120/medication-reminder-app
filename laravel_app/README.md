@@ -1,66 +1,104 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# くすりサポート (Medication Reminder App)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+高齢のご家族など、複数人分のお薬管理と服薬記録を行うためのWebアプリケーションです。
+元看護師としての臨床経験をもとに、「飲み忘れを防ぎたい」「誰が・いつ・どの薬を飲んだかを記録したい」というニーズから開発しました。
 
-## About Laravel
+## 主な機能
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **患者（ご家族）管理**：複数の患者を登録し、それぞれの服薬情報を個別に管理
+- **お薬管理**：薬名・分量・服用時刻を登録し、写真も添付可能
+- **服薬記録**：「飲んだ」「取り消し」の記録をワンタップで保存
+- **プッシュ通知によるリマインダー**：服用時刻にブラウザ通知でお知らせ（Web Push）
+- **ゴミ箱機能**：誤って削除したデータを復元できる論理削除（Soft Delete）
+- **認証機能**：Laravel Breezeによるログイン・会員登録・パスワードリセット
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 技術構成
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| カテゴリ | 使用技術 |
+|---|---|
+| バックエンド | PHP 8.1 / Laravel 10 |
+| データベース | MySQL 8.0 |
+| フロントエンド | Blade / Tailwind CSS / Alpine.js |
+| 認証 | Laravel Breeze |
+| プッシュ通知 | laravel-notification-channels/webpush |
+| 開発環境 | Docker / Docker Compose |
+| メール確認（開発用） | Mailpit |
+| コード整形 | Laravel Pint |
+| テスト | PHPUnit |
 
-## Learning Laravel
+## データベース構成
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| テーブル | 役割 |
+|---|---|
+| `users` | ログインするユーザー（ご家族の代表者など） |
+| `patients` | 服薬管理の対象となる患者（ユーザーに紐づく） |
+| `medicines` | 患者ごとに登録するお薬情報（薬名・分量・服用時刻） |
+| `adherences` | 服薬記録（いつ・どの薬を飲んだか） |
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+**リレーション**：`User` 1 - N `Patient` 1 - N `Medicine` 1 - N `Adherence`
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## セットアップ手順（Docker）
 
-## Laravel Sponsors
+### 前提
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- Docker Desktop がインストール済みであること
 
-### Premium Partners
+### 手順
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+```bash
+# 1. リポジトリをクローン
+git clone https://github.com/asuka0120/medication-reminder-app.git
+cd medication-reminder-app
 
-## Contributing
+# 2. 環境変数ファイルを作成
+cp laravel_app/.env.example laravel_app/.env
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# 3. コンテナを起動
+docker compose up -d
 
-## Code of Conduct
+# 4. 依存パッケージをインストール
+docker compose exec web composer install
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# 5. アプリケーションキーを生成
+docker compose exec web php artisan key:generate
 
-## Security Vulnerabilities
+# 6. マイグレーションを実行（テーブル作成）
+docker compose exec web php artisan migrate
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+起動後、以下のURLにアクセスできます。
 
-## License
+- アプリ本体: http://localhost
+- Mailpit（開発用メール確認画面）: http://localhost:8025
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## テスト
+
+```bash
+docker compose exec web php artisan test
+```
+
+認証まわりの機能テスト（PHPUnit）に加え、開発初期段階では手動テストケースによる検証も行っています。
+
+## コードスタイル
+
+[Laravel Pint](https://laravel.com/docs/pint) によるコード整形ルールに従っています。コミット前に以下を実行してください。
+
+```bash
+docker compose exec web php vendor/bin/pint
+```
+
+## ディレクトリ構成（抜粋）
+```
+laravel_app/
+├── app/
+│   ├── Http/Controllers/   # 患者・お薬・ゴミ箱などの各種コントローラー
+│   ├── Models/             # User, Patient, Medicine, Adherence
+│   └── Notifications/      # 服薬リマインダー通知
+├── database/migrations/    # テーブル定義
+├── resources/views/        # Bladeテンプレート
+├── routes/web.php          # ルーティング定義
+└── tests/                  # PHPUnitテスト
+```
+## ライセンス
+
+このプロジェクトは学習・ポートフォリオ目的で作成されています。
