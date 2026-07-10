@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('adherences', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('medicine_id')->constrained()->onDelete('cascade'); // どのお薬か
-        $table->date('taken_date'); // 飲んだ日付（2026-01-26など）
-        $table->timestamps();
+            $table->id();
+            $table->foreignId('medicine_id')->constrained()->onDelete('cascade'); // どのお薬か
+            $table->date('taken_date'); // 飲んだ日付（2026-01-26など）
+            $table->timestamps();
         });
     }
 

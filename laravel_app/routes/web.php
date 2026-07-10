@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PatientController;
 use App\Http\Controllers\MedicineController;
+use App\Http\Controllers\PatientController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TrashController;
 use Illuminate\Support\Facades\Route;
 

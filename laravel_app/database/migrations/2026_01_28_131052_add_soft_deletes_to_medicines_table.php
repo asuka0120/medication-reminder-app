@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('medicines', function (Blueprint $table) {
-        $table->softDeletes(); // これが「ゴミ箱」用の列を作ります
+            $table->softDeletes(); // これが「ゴミ箱」用の列を作ります
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('medicines', function (Blueprint $table) {
-        $table->dropSoftDeletes();
+            $table->dropSoftDeletes();
         });
     }
 };

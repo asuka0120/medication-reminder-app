@@ -13,27 +13,26 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // 1分ごとに、今飲むべき薬があるかチェックする
-    $schedule->call(function () {
-        $now = now()->format('H:i');
-        $medicines = \App\Models\Medicine::where('scheduled_time', $now . ':00')->get();
+        $schedule->call(function () {
+            $now = now()->format('H:i');
+            $medicines = \App\Models\Medicine::where('scheduled_time', $now.':00')->get();
 
-        foreach ($medicines as $medicine) {
-            // 管理者（あなた）に通知を送る
-        $user = \App\Models\User::first();
-        if ($user) {
-            $user->notify(new \App\Notifications\MedicationReminder(
-                "お薬の時間です",
-                "{$medicine->patient->name}さんの「{$medicine->medicine_name}」の時間になりました。"
-            ));
-        }
-    }
-    })->everyMinute();
+            foreach ($medicines as $medicine) {
+                // 管理者（あなた）に通知を送る
+                $user = \App\Models\User::first();
+                if ($user) {
+                    $user->notify(new \App\Notifications\MedicationReminder(
+                        'お薬の時間です',
+                        "{$medicine->patient->name}さんの「{$medicine->medicine_name}」の時間になりました。"
+                    ));
+                }
+            }
+        })->everyMinute();
     }
 
     /**
      * Register the commands for the application.
      */
-    
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');

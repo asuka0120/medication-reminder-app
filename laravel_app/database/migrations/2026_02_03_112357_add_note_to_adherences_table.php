@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('adherences', function (Blueprint $table) {
-        $table->text('note')->nullable(); // メモ欄（空でもOK）を追加
+            $table->text('note')->nullable(); // メモ欄（空でもOK）を追加
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('adherences', function (Blueprint $table) {
-        $table->dropColumn('note');
+            $table->dropColumn('note');
         });
     }
 };

@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('patients', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');          // 患者さんの名前
-        $table->string('nickname')->nullable(); // 家族が呼びやすい「おじいちゃん」などの呼称
-        $table->text('memo')->nullable(); // 「お水多めで」などのちょっとした注意書き
-        $table->timestamps();
+            $table->id();
+            $table->string('name');          // 患者さんの名前
+            $table->string('nickname')->nullable(); // 家族が呼びやすい「おじいちゃん」などの呼称
+            $table->text('memo')->nullable(); // 「お水多めで」などのちょっとした注意書き
+            $table->timestamps();
         });
     }
 

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes; // 追加
 class Patient extends Model
 {
     use HasFactory;
-     use SoftDeletes; // 追加
+    use SoftDeletes; // 追加
 
     /**
      * 登録・編集を許可する列の一覧

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Patient;
-use App\Models\Medicine;
 use App\Models\Adherence;
+use App\Models\Medicine;
+use App\Models\Patient;
+use Illuminate\Http\Request;
 
 class MedicineController extends Controller
 {
@@ -33,16 +33,16 @@ class MedicineController extends Controller
         abort_if($patient->user_id !== auth()->id(), 403);
 
         // バリデーション
-    $request->validate([
-    'medicine_name' => 'required|string|max:50',
-    'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-], [
-    'medicine_name.required' => '薬名は必須です。',
-    'medicine_name.max'      => '薬名は50文字以内で入力してください。',
-    'image.image'            => '画像ファイルを選択してください。',
-    'image.mimes'            => '対応していないファイル形式です。JPEGまたはPNGをアップロードしてください。',
-    'image.max'              => 'ファイルサイズは2MB以下にしてください。',
-]);
+        $request->validate([
+            'medicine_name' => 'required|string|max:50',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ], [
+            'medicine_name.required' => '薬名は必須です。',
+            'medicine_name.max' => '薬名は50文字以内で入力してください。',
+            'image.image' => '画像ファイルを選択してください。',
+            'image.mimes' => '対応していないファイル形式です。JPEGまたはPNGをアップロードしてください。',
+            'image.max' => 'ファイルサイズは2MB以下にしてください。',
+        ]);
 
         // 1. 分量の決定（選択肢 or 手入力）
         $dosage = $request->dosage_select === 'other' ? $request->dosage_manual : $request->dosage_select;
@@ -57,8 +57,8 @@ class MedicineController extends Controller
         $inputTimes = $request->input('times', []);
 
         // ★重要：自由入力欄で「空のまま」送信されたデータを除外する
-        $selectedTimes = array_filter($inputTimes, function($value) {
-            return !empty($value);
+        $selectedTimes = array_filter($inputTimes, function ($value) {
+            return ! empty($value);
         });
 
         // ★重要：時刻が一つもない場合はエラーを返して中断する
@@ -71,11 +71,11 @@ class MedicineController extends Controller
         // 5. 時刻の数だけ保存を繰り返す（一括登録）
         foreach ($selectedTimes as $time) {
             \App\Models\Medicine::create([
-                'patient_id'    => $request->patient_id,
+                'patient_id' => $request->patient_id,
                 'medicine_name' => $request->medicine_name,
-                'dosage'        => $dosage,
-                'scheduled_time'=> $time,
-                'image_path'    => $imagePath,
+                'dosage' => $dosage,
+                'scheduled_time' => $time,
+                'image_path' => $imagePath,
             ]);
         }
 
@@ -121,8 +121,8 @@ class MedicineController extends Controller
         }
 
         // 3. 空文字を除外して「有効な時間」だけを取り出す
-        $selectedTimings = array_filter($request->timings, function($value) {
-            return !empty($value);
+        $selectedTimings = array_filter($request->timings, function ($value) {
+            return ! empty($value);
         });
 
         // 4. 有効な時間が一つもない場合は差し戻す
@@ -134,8 +134,8 @@ class MedicineController extends Controller
 
         // 5. 古いスケジュールを一度削除
         Medicine::where('patient_id', $medicine->patient_id)
-                ->where('medicine_name', $medicine->medicine_name)
-                ->delete();
+            ->where('medicine_name', $medicine->medicine_name)
+            ->delete();
 
         // 6. 新しく作成
         foreach ($selectedTimings as $time) {
@@ -164,7 +164,7 @@ class MedicineController extends Controller
         Adherence::create([
             'medicine_id' => $request->medicine_id,
             'taken_date' => now()->toDateString(),
-            'taken_time'  => now()->format('H:i:s'), // 実際に押した時刻を保存
+            'taken_time' => now()->format('H:i:s'), // 実際に押した時刻を保存
             'note' => $request->note,
         ]);
 
@@ -199,10 +199,9 @@ class MedicineController extends Controller
         abort_if($medicine->patient->user_id !== auth()->id(), 403);
 
         Medicine::where('patient_id', $medicine->patient_id)
-                ->where('medicine_name', $medicine->medicine_name)
-                ->delete();
+            ->where('medicine_name', $medicine->medicine_name)
+            ->delete();
 
-        return back()->with('success', '「' . $medicine->medicine_name . '」の全スケジュールをゴミ箱に移動しました。');
+        return back()->with('success', '「'.$medicine->medicine_name.'」の全スケジュールをゴミ箱に移動しました。');
     }
-
 }

@@ -3,12 +3,13 @@
 namespace App\Notifications;
 
 use Illuminate\Notifications\Notification;
-use NotificationChannels\WebPush\WebPushMessage;
 use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class MedicationReminder extends Notification
 {
     private $title;
+
     private $body;
 
     public function __construct($title, $body)

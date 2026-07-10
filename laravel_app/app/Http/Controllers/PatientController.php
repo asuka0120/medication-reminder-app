@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Carbon\Carbon;
 use App\Models\Patient;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class PatientController extends Controller
 {
@@ -15,7 +15,7 @@ class PatientController extends Controller
     {
         // ログインしているユーザーの患者さんだけを取得する
         $patients = auth()->user()->patients()->with('medicines')->get();
-        
+
         return view('patients.index', compact('patients'));
     }
 
@@ -33,14 +33,14 @@ class PatientController extends Controller
     public function store(Request $request)
     {
         // バリデーション（入力値のチェック）
-    $request->validate([
-        'name' => 'required|string|max:50', // 名前は必須・文字列・50文字以内
-    ], [
-        'name.required' => '名前は必須です。',
-        'name.max'      => '名前は50文字以内で入力してください。',
-    ]);
+        $request->validate([
+            'name' => 'required|string|max:50', // 名前は必須・文字列・50文字以内
+        ], [
+            'name.required' => '名前は必須です。',
+            'name.max' => '名前は50文字以内で入力してください。',
+        ]);
 
-        $patient = new Patient();
+        $patient = new Patient;
         $patient->user_id = auth()->id(); // ログインユーザーのIDを紐づける
         $patient->name = $request->name;
         $patient->nickname = $request->nickname;
@@ -60,7 +60,7 @@ class PatientController extends Controller
 
         // 1. 表示したい月を取得（指定がなければ今月）
         $monthParam = $request->query('month', now()->format('Y-m'));
-        $date = Carbon::parse($monthParam . '-01');
+        $date = Carbon::parse($monthParam.'-01');
 
         $startOfMonth = $date->copy()->startOfMonth();
         $endOfMonth = $date->copy()->endOfMonth();
@@ -72,7 +72,7 @@ class PatientController extends Controller
         $nextMonth = $date->copy()->addMonth()->format('Y-m');
 
         // 3. お薬と、その期間の服用記録を読み込む
-        $patient->load(['medicines.adherences' => function($query) use ($startOfMonth, $endOfMonth) {
+        $patient->load(['medicines.adherences' => function ($query) use ($startOfMonth, $endOfMonth) {
             $query->whereBetween('taken_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()]);
         }]);
 
@@ -94,60 +94,60 @@ class PatientController extends Controller
     }
 
     /**
- * 患者情報の編集画面を表示する
- */
-public function edit(string $id)
-{
-    $patient = Patient::findOrFail($id);
+     * 患者情報の編集画面を表示する
+     */
+    public function edit(string $id)
+    {
+        $patient = Patient::findOrFail($id);
 
-    // ログインユーザーの患者かどうか確認する
-    abort_if($patient->user_id !== auth()->id(), 403);
+        // ログインユーザーの患者かどうか確認する
+        abort_if($patient->user_id !== auth()->id(), 403);
 
-    return view('patients.edit', compact('patient'));
-}
+        return view('patients.edit', compact('patient'));
+    }
 
-/**
- * 患者情報を更新する
- */
-public function update(Request $request, string $id)
-{
-    $patient = Patient::findOrFail($id);
+    /**
+     * 患者情報を更新する
+     */
+    public function update(Request $request, string $id)
+    {
+        $patient = Patient::findOrFail($id);
 
-    // ログインユーザーの患者かどうか確認する
-    abort_if($patient->user_id !== auth()->id(), 403);
+        // ログインユーザーの患者かどうか確認する
+        abort_if($patient->user_id !== auth()->id(), 403);
 
-    // バリデーション
-    $request->validate([
-        'name' => 'required|string|max:50',
-    ], [
-        'name.required' => '名前は必須です。',
-        'name.max'      => '名前は50文字以内で入力してください。',
-    ]);
+        // バリデーション
+        $request->validate([
+            'name' => 'required|string|max:50',
+        ], [
+            'name.required' => '名前は必須です。',
+            'name.max' => '名前は50文字以内で入力してください。',
+        ]);
 
-    $patient->name     = $request->name;
-    $patient->nickname = $request->nickname;
-    $patient->memo     = $request->memo;
-    $patient->save();
+        $patient->name = $request->name;
+        $patient->nickname = $request->nickname;
+        $patient->memo = $request->memo;
+        $patient->save();
 
-    return redirect('/patients')->with('success', '家族情報を更新しました。');
-}
+        return redirect('/patients')->with('success', '家族情報を更新しました。');
+    }
 
     /**
      * 患者データを削除する
      */
     public function destroy($id)
-{
-    $patient = Patient::findOrFail($id);
+    {
+        $patient = Patient::findOrFail($id);
 
-    // ログインユーザーの患者かどうか確認する
-    abort_if($patient->user_id !== auth()->id(), 403);
+        // ログインユーザーの患者かどうか確認する
+        abort_if($patient->user_id !== auth()->id(), 403);
 
-    // 関連する薬をソフトデリート（ゴミ箱に移動）
-    $patient->medicines()->delete();
+        // 関連する薬をソフトデリート（ゴミ箱に移動）
+        $patient->medicines()->delete();
 
-    // 患者をソフトデリート（ゴミ箱に移動）
-    $patient->delete();
+        // 患者をソフトデリート（ゴミ箱に移動）
+        $patient->delete();
 
-    return redirect()->route('patients.index')->with('success', '家族の登録を解除しました。');
-}
+        return redirect()->route('patients.index')->with('success', '家族の登録を解除しました。');
+    }
 }

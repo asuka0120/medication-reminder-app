@@ -19,7 +19,7 @@ class Medicine extends Model
         'patient_id',    // 患者ID
         'medicine_name', // お薬名
         'dosage',        // 分量・飲み方
-        'scheduled_time',// 服用時刻
+        'scheduled_time', // 服用時刻
         'image_path',    // 画像の保存パス
     ];
 

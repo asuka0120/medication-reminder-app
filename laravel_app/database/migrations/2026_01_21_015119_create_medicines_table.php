@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('medicines', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('patient_id')->constrained(); // 誰の薬か
-        $table->string('medicine_name');               // 薬の名前
-        $table->time('scheduled_time');                // 服用時刻（プッシュ通知の基準）
-        $table->string('dosage')->nullable();          // 1回2錠、など
-        $table->timestamps();
+            $table->id();
+            $table->foreignId('patient_id')->constrained(); // 誰の薬か
+            $table->string('medicine_name');               // 薬の名前
+            $table->time('scheduled_time');                // 服用時刻（プッシュ通知の基準）
+            $table->string('dosage')->nullable();          // 1回2錠、など
+            $table->timestamps();
         });
     }
 
