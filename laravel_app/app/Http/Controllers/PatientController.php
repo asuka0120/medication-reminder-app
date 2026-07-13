@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePatientRequest;
+use App\Http\Requests\UpdatePatientRequest;
 use App\Models\Patient;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -30,15 +32,9 @@ class PatientController extends Controller
     /**
      * 家族データを保存する
      */
-    public function store(Request $request)
+    public function store(StorePatientRequest $request)
     {
-        // バリデーション（入力値のチェック）
-        $request->validate([
-            'name' => 'required|string|max:50', // 名前は必須・文字列・50文字以内
-        ], [
-            'name.required' => '名前は必須です。',
-            'name.max' => '名前は50文字以内で入力してください。',
-        ]);
+        // バリデーションはStorePatientRequestに集約済み。
 
         $patient = new Patient;
         $patient->user_id = auth()->id(); // ログインユーザーのIDを紐づける
@@ -109,20 +105,12 @@ class PatientController extends Controller
     /**
      * 患者情報を更新する
      */
-    public function update(Request $request, string $id)
+    public function update(UpdatePatientRequest $request, string $id)
     {
         $patient = Patient::findOrFail($id);
 
-        // ログインユーザーの患者かどうか確認する
-        abort_if($patient->user_id !== auth()->id(), 403);
-
-        // バリデーション
-        $request->validate([
-            'name' => 'required|string|max:50',
-        ], [
-            'name.required' => '名前は必須です。',
-            'name.max' => '名前は50文字以内で入力してください。',
-        ]);
+        // バリデーションと認可（他人の患者は更新できないかの確認）は
+        // UpdatePatientRequestに集約済み。
 
         $patient->name = $request->name;
         $patient->nickname = $request->nickname;

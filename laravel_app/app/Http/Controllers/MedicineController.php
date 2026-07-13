@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreMedicineRequest;
+use App\Http\Requests\UpdateMedicineRequest;
 use App\Models\Adherence;
 use App\Models\Medicine;
 use App\Models\Patient;
@@ -25,24 +27,10 @@ class MedicineController extends Controller
     /**
      * お薬データを保存する
      */
-    public function store(Request $request)
+    public function store(StoreMedicineRequest $request)
     {
-        $patient = Patient::findOrFail($request->patient_id);
-
-        // ログインユーザーの患者かどうか確認する（他人の患者に薬を登録できない）
-        abort_if($patient->user_id !== auth()->id(), 403);
-
-        // バリデーション
-        $request->validate([
-            'medicine_name' => 'required|string|max:50',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ], [
-            'medicine_name.required' => '薬名は必須です。',
-            'medicine_name.max' => '薬名は50文字以内で入力してください。',
-            'image.image' => '画像ファイルを選択してください。',
-            'image.mimes' => '対応していないファイル形式です。JPEGまたはPNGをアップロードしてください。',
-            'image.max' => 'ファイルサイズは2MB以下にしてください。',
-        ]);
+        // バリデーションと認可（他人の患者に薬を登録できないかの確認）は
+        // StoreMedicineRequestに集約済み。ここに到達した時点で両方通過している。
 
         // 1. 分量の決定（選択肢 or 手入力）
         $dosage = $request->dosage_select === 'other' ? $request->dosage_manual : $request->dosage_select;
@@ -98,20 +86,12 @@ class MedicineController extends Controller
     /**
      * お薬情報を更新する
      */
-    public function update(Request $request, $id)
+    public function update(UpdateMedicineRequest $request, $id)
     {
         $medicine = Medicine::findOrFail($id);
 
-        // ログインユーザーの患者の薬かどうか確認する（他人の薬は更新できない）
-        abort_if($medicine->patient->user_id !== auth()->id(), 403);
-
-        // 1. バリデーション
-        $request->validate([
-            'medicine_name' => 'required|string|max:50',
-            'timings' => 'required|array',
-            'dosage_select' => 'required',
-            'image' => 'nullable|image|max:2048',
-        ]);
+        // バリデーションと認可（他人の薬は更新できないかの確認）は
+        // UpdateMedicineRequestに集約済み。ここに到達した時点で両方通過している。
 
         // 2. 分量と画像の処理（現状のまま）
         $dosage = $request->dosage_select === 'other' ? $request->dosage_manual : $request->dosage_select;
