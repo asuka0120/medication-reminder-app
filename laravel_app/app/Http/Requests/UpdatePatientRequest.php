@@ -15,7 +15,7 @@ class UpdatePatientRequest extends FormRequest
     {
         $patient = Patient::find($this->route('patient'));
 
-        return $patient && $patient->user_id === auth()->id();
+        return $patient && $this->user()->can('update', $patient);
     }
 
     /**

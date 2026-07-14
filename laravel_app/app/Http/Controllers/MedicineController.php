@@ -19,7 +19,7 @@ class MedicineController extends Controller
         $patient = Patient::findOrFail($request->patient_id);
 
         // ログインユーザーの患者かどうか確認する（他人の患者は操作できない）
-        abort_if($patient->user_id !== auth()->id(), 403);
+        $this->authorize('update', $patient);
 
         return view('medicines.create', compact('patient'));
     }
@@ -78,7 +78,7 @@ class MedicineController extends Controller
         $medicine = Medicine::findOrFail($id);
 
         // ログインユーザーの患者の薬かどうか確認する（他人の薬は編集できない）
-        abort_if($medicine->patient->user_id !== auth()->id(), 403);
+        $this->authorize('update', $medicine);
 
         return view('medicines.edit', compact('medicine'));
     }
@@ -139,7 +139,7 @@ class MedicineController extends Controller
         $medicine = Medicine::findOrFail($request->medicine_id);
 
         // ログインユーザーの患者の薬かどうか確認する
-        abort_if($medicine->patient->user_id !== auth()->id(), 403);
+        $this->authorize('update', $medicine);
 
         Adherence::create([
             'medicine_id' => $request->medicine_id,
@@ -159,7 +159,7 @@ class MedicineController extends Controller
         $medicine = Medicine::findOrFail($request->medicine_id);
 
         // ログインユーザーの患者の薬かどうか確認する
-        abort_if($medicine->patient->user_id !== auth()->id(), 403);
+        $this->authorize('update', $medicine);
 
         Adherence::where('medicine_id', $request->medicine_id)
             ->where('taken_date', now()->toDateString())
@@ -176,7 +176,7 @@ class MedicineController extends Controller
         $medicine = Medicine::findOrFail($id);
 
         // ログインユーザーの患者の薬かどうか確認する（他人の薬は削除できない）
-        abort_if($medicine->patient->user_id !== auth()->id(), 403);
+        $this->authorize('delete', $medicine);
 
         Medicine::where('patient_id', $medicine->patient_id)
             ->where('medicine_name', $medicine->medicine_name)

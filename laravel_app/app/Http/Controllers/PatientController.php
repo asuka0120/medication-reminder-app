@@ -52,7 +52,7 @@ class PatientController extends Controller
     public function show(Request $request, Patient $patient)
     {
         // ログインユーザーの患者かどうか確認する（他人のデータは見せない）
-        abort_if($patient->user_id !== auth()->id(), 403);
+        $this->authorize('view', $patient);
 
         // 1. 表示したい月を取得（指定がなければ今月）
         $monthParam = $request->query('month', now()->format('Y-m'));
@@ -97,7 +97,7 @@ class PatientController extends Controller
         $patient = Patient::findOrFail($id);
 
         // ログインユーザーの患者かどうか確認する
-        abort_if($patient->user_id !== auth()->id(), 403);
+        $this->authorize('update', $patient);
 
         return view('patients.edit', compact('patient'));
     }
@@ -128,7 +128,7 @@ class PatientController extends Controller
         $patient = Patient::findOrFail($id);
 
         // ログインユーザーの患者かどうか確認する
-        abort_if($patient->user_id !== auth()->id(), 403);
+        $this->authorize('delete', $patient);
 
         // 関連する薬をソフトデリート（ゴミ箱に移動）
         $patient->medicines()->delete();

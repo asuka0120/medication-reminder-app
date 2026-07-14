@@ -15,7 +15,7 @@ class StoreMedicineRequest extends FormRequest
     {
         $patient = Patient::find($this->patient_id);
 
-        return $patient && $patient->user_id === auth()->id();
+        return $patient && $this->user()->can('update', $patient);
     }
 
     /**
