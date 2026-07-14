@@ -7,10 +7,13 @@ use App\Http\Requests\UpdateMedicineRequest;
 use App\Models\Adherence;
 use App\Models\Medicine;
 use App\Models\Patient;
+use App\Services\MedicineService;
 use Illuminate\Http\Request;
 
 class MedicineController extends Controller
 {
+    public function __construct(private MedicineService $medicineService) {}
+
     /**
      * お薬登録画面を表示する
      */
@@ -32,39 +35,13 @@ class MedicineController extends Controller
         // バリデーションと認可（他人の患者に薬を登録できないかの確認）は
         // StoreMedicineRequestに集約済み。ここに到達した時点で両方通過している。
 
-        // 1. 分量の決定（選択肢 or 手入力）
-        $dosage = $request->dosage_select === 'other' ? $request->dosage_manual : $request->dosage_select;
+        // 実際の登録処理（分量の決定・画像保存・時刻の一括登録）はMedicineServiceに委譲する
+        $created = $this->medicineService->createSchedule($request);
 
-        // 2. 写真の保存
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('medicines', 'public');
-        }
-
-        // 3. 入力された時刻を取得
-        $inputTimes = $request->input('times', []);
-
-        // ★重要：自由入力欄で「空のまま」送信されたデータを除外する
-        $selectedTimes = array_filter($inputTimes, function ($value) {
-            return ! empty($value);
-        });
-
-        // ★重要：時刻が一つもない場合はエラーを返して中断する
-        if (empty($selectedTimes)) {
+        if (! $created) {
             return back()
                 ->withInput()
                 ->with('error_message', '服用時間が設定されていません。チェックボックスを選ぶか、自由な時間を入力してください。');
-        }
-
-        // 5. 時刻の数だけ保存を繰り返す（一括登録）
-        foreach ($selectedTimes as $time) {
-            \App\Models\Medicine::create([
-                'patient_id' => $request->patient_id,
-                'medicine_name' => $request->medicine_name,
-                'dosage' => $dosage,
-                'scheduled_time' => $time,
-                'image_path' => $imagePath,
-            ]);
         }
 
         return redirect('/patients')->with('success', 'お薬を一括登録しました。');
@@ -93,39 +70,13 @@ class MedicineController extends Controller
         // バリデーションと認可（他人の薬は更新できないかの確認）は
         // UpdateMedicineRequestに集約済み。ここに到達した時点で両方通過している。
 
-        // 2. 分量と画像の処理（現状のまま）
-        $dosage = $request->dosage_select === 'other' ? $request->dosage_manual : $request->dosage_select;
-        $imagePath = $medicine->image_path;
-        if ($request->hasFile('image') && $request->file('image')->isValid()) {
-            $imagePath = $request->file('image')->store('medicines', 'public');
-        }
+        // 実際の更新処理（古いスケジュール削除・新規作成）はMedicineServiceに委譲する
+        $updated = $this->medicineService->updateSchedule($medicine, $request);
 
-        // 3. 空文字を除外して「有効な時間」だけを取り出す
-        $selectedTimings = array_filter($request->timings, function ($value) {
-            return ! empty($value);
-        });
-
-        // 4. 有効な時間が一つもない場合は差し戻す
-        if (empty($selectedTimings)) {
+        if (! $updated) {
             return back()
                 ->withInput()
                 ->with('error_message', '服用時間が設定されていません。チェックボックスを選ぶか、自由な時間を入力してください。');
-        }
-
-        // 5. 古いスケジュールを一度削除
-        Medicine::where('patient_id', $medicine->patient_id)
-            ->where('medicine_name', $medicine->medicine_name)
-            ->delete();
-
-        // 6. 新しく作成
-        foreach ($selectedTimings as $time) {
-            Medicine::create([
-                'patient_id' => $medicine->patient_id,
-                'medicine_name' => $request->medicine_name,
-                'scheduled_time' => $time,
-                'dosage' => $dosage,
-                'image_path' => $imagePath,
-            ]);
         }
 
         return redirect('/patients')->with('success', 'お薬情報を一括更新しました。');
@@ -178,9 +129,7 @@ class MedicineController extends Controller
         // ログインユーザーの患者の薬かどうか確認する（他人の薬は削除できない）
         $this->authorize('delete', $medicine);
 
-        Medicine::where('patient_id', $medicine->patient_id)
-            ->where('medicine_name', $medicine->medicine_name)
-            ->delete();
+        $this->medicineService->deleteSchedule($medicine);
 
         return back()->with('success', '「'.$medicine->medicine_name.'」の全スケジュールをゴミ箱に移動しました。');
     }
