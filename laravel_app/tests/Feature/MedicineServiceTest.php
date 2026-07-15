@@ -41,7 +41,8 @@ class MedicineServiceTest extends TestCase
         ]);
 
         $response->assertRedirect('/patients');
-        $this->assertDatabaseCount('medicines', 2);
+        $this->assertDatabaseCount('medicines', 1);
+        $this->assertDatabaseCount('medicine_schedules', 2);
     }
 
     public function test_update_fails_when_no_valid_time_is_selected(): void
@@ -52,8 +53,8 @@ class MedicineServiceTest extends TestCase
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',
             'dosage' => '1錠',
-            'scheduled_time' => '08:00',
         ]);
+        $medicine->schedules()->create(['scheduled_time' => '08:00']);
 
         $response = $this->actingAs($user)->put("/medicines/{$medicine->id}", [
             'medicine_name' => '薬A',

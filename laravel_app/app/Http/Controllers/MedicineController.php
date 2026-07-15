@@ -6,6 +6,7 @@ use App\Http\Requests\StoreMedicineRequest;
 use App\Http\Requests\UpdateMedicineRequest;
 use App\Models\Adherence;
 use App\Models\Medicine;
+use App\Models\MedicineSchedule;
 use App\Models\Patient;
 use App\Services\MedicineService;
 use Illuminate\Http\Request;
@@ -87,13 +88,14 @@ class MedicineController extends Controller
      */
     public function take(Request $request)
     {
-        $medicine = Medicine::findOrFail($request->medicine_id);
+        $schedule = MedicineSchedule::findOrFail($request->schedule_id);
 
         // ログインユーザーの患者の薬かどうか確認する
-        $this->authorize('update', $medicine);
+        $this->authorize('update', $schedule->medicine);
 
         Adherence::create([
-            'medicine_id' => $request->medicine_id,
+            'medicine_id' => $schedule->medicine_id,
+            'medicine_schedule_id' => $schedule->id,
             'taken_date' => now()->toDateString(),
             'taken_time' => now()->format('H:i:s'), // 実際に押した時刻を保存
             'note' => $request->note,
@@ -107,12 +109,12 @@ class MedicineController extends Controller
      */
     public function cancel(Request $request)
     {
-        $medicine = Medicine::findOrFail($request->medicine_id);
+        $schedule = MedicineSchedule::findOrFail($request->schedule_id);
 
         // ログインユーザーの患者の薬かどうか確認する
-        $this->authorize('update', $medicine);
+        $this->authorize('update', $schedule->medicine);
 
-        Adherence::where('medicine_id', $request->medicine_id)
+        Adherence::where('medicine_schedule_id', $schedule->id)
             ->where('taken_date', now()->toDateString())
             ->delete();
 

@@ -69,10 +69,8 @@
             <label style="font-weight: bold;">飲むタイミング（複数選ぶと一括でスケジュールを更新します）:</label>
             <div class="timing-grid">
                 @php
-                    // 現在登録されている全時刻を取得
-                    $allRegisteredTimes = \App\Models\Medicine::where('patient_id', $medicine->patient_id)
-                                        ->where('medicine_name', $medicine->medicine_name)
-                                        ->whereNull('deleted_at')
+                    // 現在登録されている全時刻を取得（このお薬のスケジュールを直接参照するだけでよくなった）
+                    $allRegisteredTimes = $medicine->schedules
                                         ->pluck('scheduled_time')
                                         ->map(fn($t) => \Carbon\Carbon::parse($t)->format('H:i'))
                                         ->toArray();

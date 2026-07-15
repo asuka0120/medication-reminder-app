@@ -179,32 +179,31 @@
                 </tr>
             </thead>
             <tbody>
-            @foreach ($patient->medicines->groupBy('medicine_name') as $name => $group)
-                @php 
-                    $first = $group->first(); 
+            @foreach ($patient->medicines as $medicine)
+                @php
                     $rowColorClass = $loop->odd ? 'bg-odd' : 'bg-even';
                 @endphp
                 <tr class="medicine-row {{ $rowColorClass }}">
                     <td class="{{ $rowColorClass }}">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            @if($first->image_path)
-                                <img src="{{ asset('storage/' . $first->image_path) }}" 
+                            @if($medicine->image_path)
+                                <img src="{{ asset('storage/' . $medicine->image_path) }}" 
                                      class="clickable" 
                                      style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;"
-                                     onclick="showBigDisplay('お薬の写真', '{{ $name }}', '{{ asset('storage/' . $first->image_path) }}', '', true)">
+                                     onclick="showBigDisplay('お薬の写真', '{{ $medicine->medicine_name }}', '{{ asset('storage/' . $medicine->image_path) }}', '', true)">
                             @endif
-                            <strong class="medicine-name" style="font-size: 1.1em;">{{ $name }}</strong>
+                            <strong class="medicine-name" style="font-size: 1.1em;">{{ $medicine->medicine_name }}</strong>
                         </div>
                     </td>
-                    <td style="text-align: center;" class="{{ $rowColorClass }}">{{ $first->dosage }}</td>
+                    <td style="text-align: center;" class="{{ $rowColorClass }}">{{ $medicine->dosage }}</td>
                     <td class="{{ $rowColorClass }}">
-                        @foreach ($group->sortBy('scheduled_time') as $medicine)
+                        @foreach ($medicine->schedules->sortBy('scheduled_time') as $schedule)
                             @php
-                                $adherence = $medicine->adherences()->where('taken_date', now()->toDateString())->first();
+                                $adherence = $schedule->adherences()->where('taken_date', now()->toDateString())->first();
                                 $isTaken = (bool)$adherence;
 
                                 // ★飲み忘れ判定ロジック★
-                                $scheduledTime = \Carbon\Carbon::parse($medicine->scheduled_time);
+                                $scheduledTime = \Carbon\Carbon::parse($schedule->scheduled_time);
                                 $isOverdue = !$isTaken && $scheduledTime->isBefore(now());
                             @endphp
                             
@@ -219,19 +218,19 @@
                                         <div style="display: flex; align-items: center; gap: 8px;">
                                             <span style="color: #2e7d32; font-weight: bold;" 
                                                   class="status-taken clickable"
-                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : $scheduledTime->format('H:i') }}', '{{ $name }}', '{{ $first->image_path ? asset('storage/' . $first->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
+                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : $scheduledTime->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
                                                 ✅ 服用済み
                                             </span>
                                             <form action="{{ route('medicines.cancel') }}" method="POST" style="display:inline;">
                                                 @csrf
-                                                <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
+                                                <input type="hidden" name="schedule_id" value="{{ $schedule->id }}">
                                                 <button type="submit" class="btn-danger" style="padding: 2px 8px; font-size: 10px; border-radius: 4px;">取消</button>
                                             </form>
                                         </div>
                                     @else
                                         <form action="{{ route('medicines.take') }}" method="POST" style="margin:0; display: flex; align-items: center; gap: 8px;">
                                             @csrf
-                                            <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
+                                            <input type="hidden" name="schedule_id" value="{{ $schedule->id }}">
                                             <input type="text" name="note" placeholder="{{ $isOverdue ? '⚠️ 飲み忘れ！' : '体調メモ' }}" 
        style="font-size: 0.8em; padding: 6px; border-radius: 5px; border: 1px solid {{ $isOverdue ? '#f44336' : '#ddd' }}; width: 140px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
 <button type="submit" class="btn" 
@@ -246,8 +245,8 @@
                         @endforeach
                     </td>
                     <td style="text-align: center;" class="{{ $rowColorClass }}">
-                        <a href="{{ route('medicines.edit', $first->id) }}" class="btn btn-edit" style="font-size: 16px; margin-bottom: 5px; width: 60px;">編集</a>
-                        <form action="{{ route('medicines.destroy', $first->id) }}" method="POST" onsubmit="return confirm('同じ名前のスケジュールを全て削除しますか？');">
+                        <a href="{{ route('medicines.edit', $medicine->id) }}" class="btn btn-edit" style="font-size: 16px; margin-bottom: 5px; width: 60px;">編集</a>
+                        <form action="{{ route('medicines.destroy', $medicine->id) }}" method="POST" onsubmit="return confirm('このお薬を削除しますか？');">
                             @csrf @method('DELETE')
                             <button type="submit" class="btn btn-danger" style="font-size: 16px; width: 90px;">削除</button>
                         </form>

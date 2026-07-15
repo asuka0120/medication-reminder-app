@@ -10,12 +10,11 @@ class TrashController extends Controller
     // ゴミ箱一覧
     public function index()
     {
+        // ★テーブル設計の見直しにより、1件の薬＝1行になったので、
+        //   以前のような medicine_name によるグループ化は不要になった。
         $trashedMedicines = Medicine::onlyTrashed()->with(['patient' => function ($query) {
             $query->withTrashed();
-        }])->get()
-            ->groupBy(function ($item) {
-                return $item->patient_id.'-'.$item->medicine_name;
-            });
+        }])->get();
         $trashedPatients = Patient::onlyTrashed()->get();
 
         return view('trash.index', compact('trashedMedicines', 'trashedPatients'));
@@ -26,10 +25,7 @@ class TrashController extends Controller
     {
         $medicine = Medicine::onlyTrashed()->find($id);
         if ($medicine) {
-            Medicine::onlyTrashed()
-                ->where('patient_id', $medicine->patient_id)
-                ->where('medicine_name', $medicine->medicine_name)
-                ->restore();
+            $medicine->restore();
 
             return redirect()->route('trash.index')->with('success', 'お薬を復元しました。');
         }
@@ -52,10 +48,8 @@ class TrashController extends Controller
     {
         $medicine = Medicine::onlyTrashed()->find($id);
         if ($medicine) {
-            Medicine::onlyTrashed()
-                ->where('patient_id', $medicine->patient_id)
-                ->where('medicine_name', $medicine->medicine_name)
-                ->forceDelete();
+            // 完全削除すると、紐づくmedicine_schedules・adherencesもDB側のcascade設定で自動的に削除される
+            $medicine->forceDelete();
 
             return redirect()->route('trash.index')->with('success', 'お薬を完全に削除しました。');
         }

@@ -68,10 +68,10 @@ class PolicyAuthorizationTest extends TestCase
 
     public function test_stranger_cannot_take_others_medicine(): void
     {
-        [$stranger, $medicine] = $this->createMedicineOwnedByAnotherUser();
+        [$stranger, $medicine, $schedule] = $this->createMedicineOwnedByAnotherUser();
 
         $response = $this->actingAs($stranger)->post('/medicines/take', [
-            'medicine_id' => $medicine->id,
+            'schedule_id' => $schedule->id,
         ]);
 
         $response->assertStatus(403);
@@ -79,15 +79,16 @@ class PolicyAuthorizationTest extends TestCase
 
     public function test_stranger_cannot_cancel_others_medicine(): void
     {
-        [$stranger, $medicine] = $this->createMedicineOwnedByAnotherUser();
+        [$stranger, $medicine, $schedule] = $this->createMedicineOwnedByAnotherUser();
         Adherence::create([
             'medicine_id' => $medicine->id,
+            'medicine_schedule_id' => $schedule->id,
             'taken_date' => now()->toDateString(),
             'taken_time' => now()->format('H:i:s'),
         ]);
 
         $response = $this->actingAs($stranger)->post('/medicines/cancel', [
-            'medicine_id' => $medicine->id,
+            'schedule_id' => $schedule->id,
         ]);
 
         $response->assertStatus(403);
@@ -103,7 +104,7 @@ class PolicyAuthorizationTest extends TestCase
     }
 
     /**
-     * 他人の患者・お薬データを1件作成し、[部外者ユーザー, お薬] を返す共通ヘルパー
+     * 他人の患者・お薬データを1件作成し、[部外者ユーザー, お薬, スケジュール] を返す共通ヘルパー
      */
     private function createMedicineOwnedByAnotherUser(): array
     {
@@ -114,9 +115,9 @@ class PolicyAuthorizationTest extends TestCase
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',
             'dosage' => '1錠',
-            'scheduled_time' => '08:00',
         ]);
+        $schedule = $medicine->schedules()->create(['scheduled_time' => '08:00']);
 
-        return [$stranger, $medicine];
+        return [$stranger, $medicine, $schedule];
     }
 }

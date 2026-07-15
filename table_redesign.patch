@@ -1,0 +1,834 @@
+diff --git a/laravel_app/app/Console/Kernel.php b/laravel_app/app/Console/Kernel.php
+index 390a403..46e3407 100644
+--- a/laravel_app/app/Console/Kernel.php
++++ b/laravel_app/app/Console/Kernel.php
+@@ -15,9 +15,13 @@ protected function schedule(Schedule $schedule): void
+         // 1分ごとに、今飲むべき薬があるかチェックする
+         $schedule->call(function () {
+             $now = now()->format('H:i');
+-            $medicines = \App\Models\Medicine::where('scheduled_time', $now.':00')->get();
++            $schedules = \App\Models\MedicineSchedule::with('medicine.patient')
++                ->where('scheduled_time', $now.':00')
++                ->get();
++
++            foreach ($schedules as $medicineSchedule) {
++                $medicine = $medicineSchedule->medicine;
+ 
+-            foreach ($medicines as $medicine) {
+                 // 管理者（あなた）に通知を送る
+                 $user = \App\Models\User::first();
+                 if ($user) {
+diff --git a/laravel_app/app/Http/Controllers/MedicineController.php b/laravel_app/app/Http/Controllers/MedicineController.php
+index b84b0ce..5030406 100644
+--- a/laravel_app/app/Http/Controllers/MedicineController.php
++++ b/laravel_app/app/Http/Controllers/MedicineController.php
+@@ -6,6 +6,7 @@
+ use App\Http\Requests\UpdateMedicineRequest;
+ use App\Models\Adherence;
+ use App\Models\Medicine;
++use App\Models\MedicineSchedule;
+ use App\Models\Patient;
+ use App\Services\MedicineService;
+ use Illuminate\Http\Request;
+@@ -87,13 +88,14 @@ public function update(UpdateMedicineRequest $request, $id)
+      */
+     public function take(Request $request)
+     {
+-        $medicine = Medicine::findOrFail($request->medicine_id);
++        $schedule = MedicineSchedule::findOrFail($request->schedule_id);
+ 
+         // ログインユーザーの患者の薬かどうか確認する
+-        $this->authorize('update', $medicine);
++        $this->authorize('update', $schedule->medicine);
+ 
+         Adherence::create([
+-            'medicine_id' => $request->medicine_id,
++            'medicine_id' => $schedule->medicine_id,
++            'medicine_schedule_id' => $schedule->id,
+             'taken_date' => now()->toDateString(),
+             'taken_time' => now()->format('H:i:s'), // 実際に押した時刻を保存
+             'note' => $request->note,
+@@ -107,12 +109,12 @@ public function take(Request $request)
+      */
+     public function cancel(Request $request)
+     {
+-        $medicine = Medicine::findOrFail($request->medicine_id);
++        $schedule = MedicineSchedule::findOrFail($request->schedule_id);
+ 
+         // ログインユーザーの患者の薬かどうか確認する
+-        $this->authorize('update', $medicine);
++        $this->authorize('update', $schedule->medicine);
+ 
+-        Adherence::where('medicine_id', $request->medicine_id)
++        Adherence::where('medicine_schedule_id', $schedule->id)
+             ->where('taken_date', now()->toDateString())
+             ->delete();
+ 
+diff --git a/laravel_app/app/Http/Controllers/PatientController.php b/laravel_app/app/Http/Controllers/PatientController.php
+index ff4cc8e..bb0ce3f 100644
+--- a/laravel_app/app/Http/Controllers/PatientController.php
++++ b/laravel_app/app/Http/Controllers/PatientController.php
+@@ -16,7 +16,7 @@ class PatientController extends Controller
+     public function index()
+     {
+         // ログインしているユーザーの患者さんだけを取得する
+-        $patients = auth()->user()->patients()->with('medicines')->get();
++        $patients = auth()->user()->patients()->with('medicines.schedules')->get();
+ 
+         return view('patients.index', compact('patients'));
+     }
+@@ -68,7 +68,7 @@ public function show(Request $request, Patient $patient)
+         $nextMonth = $date->copy()->addMonth()->format('Y-m');
+ 
+         // 3. お薬と、その期間の服用記録を読み込む
+-        $patient->load(['medicines.adherences' => function ($query) use ($startOfMonth, $endOfMonth) {
++        $patient->load(['medicines.schedules.adherences' => function ($query) use ($startOfMonth, $endOfMonth) {
+             $query->whereBetween('taken_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()]);
+         }]);
+ 
+diff --git a/laravel_app/app/Http/Controllers/TrashController.php b/laravel_app/app/Http/Controllers/TrashController.php
+index ef3669a..89f1cab 100644
+--- a/laravel_app/app/Http/Controllers/TrashController.php
++++ b/laravel_app/app/Http/Controllers/TrashController.php
+@@ -10,12 +10,11 @@ class TrashController extends Controller
+     // ゴミ箱一覧
+     public function index()
+     {
++        // ★テーブル設計の見直しにより、1件の薬＝1行になったので、
++        //   以前のような medicine_name によるグループ化は不要になった。
+         $trashedMedicines = Medicine::onlyTrashed()->with(['patient' => function ($query) {
+             $query->withTrashed();
+-        }])->get()
+-            ->groupBy(function ($item) {
+-                return $item->patient_id.'-'.$item->medicine_name;
+-            });
++        }])->get();
+         $trashedPatients = Patient::onlyTrashed()->get();
+ 
+         return view('trash.index', compact('trashedMedicines', 'trashedPatients'));
+@@ -26,10 +25,7 @@ public function restore($id)
+     {
+         $medicine = Medicine::onlyTrashed()->find($id);
+         if ($medicine) {
+-            Medicine::onlyTrashed()
+-                ->where('patient_id', $medicine->patient_id)
+-                ->where('medicine_name', $medicine->medicine_name)
+-                ->restore();
++            $medicine->restore();
+ 
+             return redirect()->route('trash.index')->with('success', 'お薬を復元しました。');
+         }
+@@ -52,10 +48,8 @@ public function forceDelete($id)
+     {
+         $medicine = Medicine::onlyTrashed()->find($id);
+         if ($medicine) {
+-            Medicine::onlyTrashed()
+-                ->where('patient_id', $medicine->patient_id)
+-                ->where('medicine_name', $medicine->medicine_name)
+-                ->forceDelete();
++            // 完全削除すると、紐づくmedicine_schedules・adherencesもDB側のcascade設定で自動的に削除される
++            $medicine->forceDelete();
+ 
+             return redirect()->route('trash.index')->with('success', 'お薬を完全に削除しました。');
+         }
+diff --git a/laravel_app/app/Models/Adherence.php b/laravel_app/app/Models/Adherence.php
+index 69359d2..84ba59e 100644
+--- a/laravel_app/app/Models/Adherence.php
++++ b/laravel_app/app/Models/Adherence.php
+@@ -10,11 +10,12 @@ class Adherence extends Model
+     use HasFactory;
+ 
+     // まとめてデータを保存することを許可する設定
+-    protected $fillable = ['medicine_id', 'taken_date', 'taken_time', 'note']; // note を追加
++    // ※medicine_id は後方互換のための予備列（実質的な参照先は medicine_schedule_id）
++    protected $fillable = ['medicine_id', 'medicine_schedule_id', 'taken_date', 'taken_time', 'note'];
+ 
+-    // どのお薬の記録なのかを紐付ける設定
+-    public function medicine()
++    // どの服薬スケジュールの記録なのかを紐付ける設定
++    public function schedule()
+     {
+-        return $this->belongsTo(Medicine::class);
++        return $this->belongsTo(MedicineSchedule::class, 'medicine_schedule_id');
+     }
+ }
+diff --git a/laravel_app/app/Models/Medicine.php b/laravel_app/app/Models/Medicine.php
+index aad1f68..de6cb40 100644
+--- a/laravel_app/app/Models/Medicine.php
++++ b/laravel_app/app/Models/Medicine.php
+@@ -13,13 +13,11 @@ class Medicine extends Model
+ 
+     /**
+      * 一括割り当て（createメソッドなど）を許可する項目
+-     * ここに patient_id が抜けていたため、エラーが発生していました。
+      */
+     protected $fillable = [
+         'patient_id',    // 患者ID
+         'medicine_name', // お薬名
+         'dosage',        // 分量・飲み方
+-        'scheduled_time', // 服用時刻
+         'image_path',    // 画像の保存パス
+     ];
+ 
+@@ -32,10 +30,10 @@ public function patient()
+     }
+ 
+     /**
+-     * リレーション設定：一つのお薬は、たくさんの服用記録（adherences）を持っている
++     * リレーション設定：一つのお薬は、たくさんの服用スケジュール（何時に飲むか）を持っている
+      */
+-    public function adherences()
++    public function schedules()
+     {
+-        return $this->hasMany(Adherence::class);
++        return $this->hasMany(MedicineSchedule::class);
+     }
+ }
+diff --git a/laravel_app/app/Models/MedicineSchedule.php b/laravel_app/app/Models/MedicineSchedule.php
+new file mode 100644
+index 0000000..f3a3a37
+--- /dev/null
++++ b/laravel_app/app/Models/MedicineSchedule.php
+@@ -0,0 +1,35 @@
++<?php
++
++namespace App\Models;
++
++use Illuminate\Database\Eloquent\Factories\HasFactory;
++use Illuminate\Database\Eloquent\Model;
++
++class MedicineSchedule extends Model
++{
++    use HasFactory;
++
++    /**
++     * 一括割り当て（createメソッドなど）を許可する項目
++     */
++    protected $fillable = [
++        'medicine_id',
++        'scheduled_time',
++    ];
++
++    /**
++     * リレーション設定：このスケジュールは、特定の薬本体に属している
++     */
++    public function medicine()
++    {
++        return $this->belongsTo(Medicine::class);
++    }
++
++    /**
++     * リレーション設定：一つのスケジュールは、たくさんの服用記録（adherences）を持っている
++     */
++    public function adherences()
++    {
++        return $this->hasMany(Adherence::class);
++    }
++}
+diff --git a/laravel_app/app/Services/MedicineService.php b/laravel_app/app/Services/MedicineService.php
+index 3356db9..8562fae 100644
+--- a/laravel_app/app/Services/MedicineService.php
++++ b/laravel_app/app/Services/MedicineService.php
+@@ -8,7 +8,7 @@
+ class MedicineService
+ {
+     /**
+-     * お薬を新規に一括登録する。
++     * お薬本体を新規に登録し、選択された時刻の分だけスケジュールを作成する。
+      * 有効な服用時刻が1つもない場合はfalseを返す。
+      */
+     public function createSchedule(Request $request): bool
+@@ -22,21 +22,24 @@ public function createSchedule(Request $request): bool
+         $dosage = $this->resolveDosage($request);
+         $imagePath = $this->storeImageIfPresent($request);
+ 
++        // 1. 薬本体を1件だけ作成する
++        $medicine = Medicine::create([
++            'patient_id' => $request->patient_id,
++            'medicine_name' => $request->medicine_name,
++            'dosage' => $dosage,
++            'image_path' => $imagePath,
++        ]);
++
++        // 2. 選んだ時刻の数だけスケジュールを作成する
+         foreach ($selectedTimes as $time) {
+-            Medicine::create([
+-                'patient_id' => $request->patient_id,
+-                'medicine_name' => $request->medicine_name,
+-                'dosage' => $dosage,
+-                'scheduled_time' => $time,
+-                'image_path' => $imagePath,
+-            ]);
++            $medicine->schedules()->create(['scheduled_time' => $time]);
+         }
+ 
+         return true;
+     }
+ 
+     /**
+-     * 既存のお薬スケジュールを、いったん削除してから新しい内容で作り直す。
++     * 薬本体の情報（薬名・分量・画像）を更新し、スケジュールを新しい内容で作り直す。
+      * 有効な服用時刻が1つもない場合はfalseを返す。
+      */
+     public function updateSchedule(Medicine $medicine, Request $request): bool
+@@ -47,39 +50,30 @@ public function updateSchedule(Medicine $medicine, Request $request): bool
+             return false;
+         }
+ 
+-        $dosage = $this->resolveDosage($request);
+-        $imagePath = $medicine->image_path;
++        // 1. 薬本体の情報を更新する
++        $medicine->medicine_name = $request->medicine_name;
++        $medicine->dosage = $this->resolveDosage($request);
+         if ($request->hasFile('image') && $request->file('image')->isValid()) {
+-            $imagePath = $request->file('image')->store('medicines', 'public');
++            $medicine->image_path = $request->file('image')->store('medicines', 'public');
+         }
++        $medicine->save();
+ 
+-        // 古いスケジュールを一度削除
+-        Medicine::where('patient_id', $medicine->patient_id)
+-            ->where('medicine_name', $medicine->medicine_name)
+-            ->delete();
+-
+-        // 新しく作成
++        // 2. 古いスケジュールを一度削除してから、新しい時刻で作り直す
++        $medicine->schedules()->delete();
+         foreach ($selectedTimings as $time) {
+-            Medicine::create([
+-                'patient_id' => $medicine->patient_id,
+-                'medicine_name' => $request->medicine_name,
+-                'scheduled_time' => $time,
+-                'dosage' => $dosage,
+-                'image_path' => $imagePath,
+-            ]);
++            $medicine->schedules()->create(['scheduled_time' => $time]);
+         }
+ 
+         return true;
+     }
+ 
+     /**
+-     * 薬名が同じスケジュールをすべてゴミ箱に移動する（ソフトデリート）。
++     * 薬本体をゴミ箱に移動する（ソフトデリート）。
++     * 紐づくスケジュールは、薬本体が完全削除されるまでそのまま残る。
+      */
+     public function deleteSchedule(Medicine $medicine): void
+     {
+-        Medicine::where('patient_id', $medicine->patient_id)
+-            ->where('medicine_name', $medicine->medicine_name)
+-            ->delete();
++        $medicine->delete();
+     }
+ 
+     /**
+diff --git a/laravel_app/database/migrations/2026_07_15_100000_create_medicine_schedules_table.php b/laravel_app/database/migrations/2026_07_15_100000_create_medicine_schedules_table.php
+new file mode 100644
+index 0000000..584d413
+--- /dev/null
++++ b/laravel_app/database/migrations/2026_07_15_100000_create_medicine_schedules_table.php
+@@ -0,0 +1,32 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration
++{
++    /**
++     * Run the migrations.
++     *
++     * 「薬本体」と「服用スケジュール（時刻）」を分離するための新しいテーブル。
++     * 1つの medicines レコードに対し、複数の medicine_schedules レコードがぶら下がる。
++     */
++    public function up(): void
++    {
++        Schema::create('medicine_schedules', function (Blueprint $table) {
++            $table->id();
++            $table->foreignId('medicine_id')->constrained()->onDelete('cascade'); // どの薬のスケジュールか
++            $table->time('scheduled_time'); // 服用時刻（プッシュ通知の基準）
++            $table->timestamps();
++        });
++    }
++
++    /**
++     * Reverse the migrations.
++     */
++    public function down(): void
++    {
++        Schema::dropIfExists('medicine_schedules');
++    }
++};
+diff --git a/laravel_app/database/migrations/2026_07_15_100100_migrate_medicine_schedule_data.php b/laravel_app/database/migrations/2026_07_15_100100_migrate_medicine_schedule_data.php
+new file mode 100644
+index 0000000..f34ef42
+--- /dev/null
++++ b/laravel_app/database/migrations/2026_07_15_100100_migrate_medicine_schedule_data.php
+@@ -0,0 +1,103 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration
++{
++    /**
++     * Run the migrations.
++     *
++     * 既存の medicines テーブルは「薬名＋時刻」で1行になっていたため、
++     * 同じ薬（患者ID＋薬名が同じ）で複数行に分かれてしまっていた。
++     * このマイグレーションで、
++     *  1. 「薬名が同じグループ」ごとに1件の medicines レコード（代表行）へ集約
++     *  2. 各行が持っていた scheduled_time を medicine_schedules レコードとして作成
++     *  3. adherences が指していた medicine_id を、代表行のIDへ付け替えつつ、
++     *     新しい medicine_schedule_id も設定する
++     *  4. 不要になった重複行を削除し、medicines テーブルから scheduled_time 列を削除
++     * を行う。
++     *
++     * ※ adherences.medicine_id 列はあえて物理削除しない。
++     *   SQLite/MySQLで外部キー付き列の削除の作法が異なり、無理に統一しようとすると
++     *   環境依存の不具合を生みやすいため、「以後アプリからは参照しない予備列」として残す。
++     *   実質的な参照先は medicine_schedule_id に一本化する。
++     */
++    public function up(): void
++    {
++        // 1. adherences に新しい参照カラムを追加（まだ中身は空）
++        Schema::table('adherences', function (Blueprint $table) {
++            $table->foreignId('medicine_schedule_id')->nullable()->after('medicine_id');
++        });
++
++        // 2. 既存の medicines を「患者ID＋薬名」でグループ化して移行する
++        //    ソフトデリート済みの行も含めて取得する（withTrashed相当）
++        $medicines = DB::table('medicines')->orderBy('id')->get();
++
++        $groups = $medicines->groupBy(function ($row) {
++            return $row->patient_id.'|'.$row->medicine_name;
++        });
++
++        foreach ($groups as $rows) {
++            // グループの中で一番古い行（id最小）を「代表の薬レコード」として残す
++            $canonical = $rows->sortBy('id')->first();
++
++            foreach ($rows as $row) {
++                // 各行が持っていた時刻を、代表レコードにぶら下がる medicine_schedules として作成
++                $scheduleId = DB::table('medicine_schedules')->insertGetId([
++                    'medicine_id' => $canonical->id,
++                    'scheduled_time' => $row->scheduled_time,
++                    'created_at' => now(),
++                    'updated_at' => now(),
++                ]);
++
++                // この行(旧medicine_id)を参照していたadherenceを、
++                // 代表行のID(medicine_id)と、新しいスケジュールID(medicine_schedule_id)へ付け替える
++                DB::table('adherences')
++                    ->where('medicine_id', $row->id)
++                    ->update([
++                        'medicine_id' => $canonical->id,
++                        'medicine_schedule_id' => $scheduleId,
++                    ]);
++            }
++
++            // 代表行以外（重複していた行）はもう不要なので削除する
++            // ※ adherences.medicine_id は上ですでに代表行のIDへ付け替え済みなので、
++            //   外部キー制約に違反せず安全に削除できる
++            $duplicateIds = $rows->pluck('id')->reject(fn ($id) => $id === $canonical->id);
++            if ($duplicateIds->isNotEmpty()) {
++                DB::table('medicines')->whereIn('id', $duplicateIds)->delete();
++            }
++        }
++
++        // 3. medicine_schedule_id を今後の正式な参照として使えるよう外部キー制約を追加する
++        Schema::table('adherences', function (Blueprint $table) {
++            $table->foreign('medicine_schedule_id')->references('id')->on('medicine_schedules')->onDelete('cascade');
++        });
++
++        // 4. medicines テーブルからは scheduled_time 列が不要になったので削除する
++        Schema::table('medicines', function (Blueprint $table) {
++            $table->dropColumn('scheduled_time');
++        });
++    }
++
++    /**
++     * Reverse the migrations.
++     *
++     * 注意：一度統合した薬名の重複を元通りに復元することはできないため、
++     * このロールバックはテーブル構造のみを元に戻す（データの完全な復元は保証しない）。
++     */
++    public function down(): void
++    {
++        Schema::table('medicines', function (Blueprint $table) {
++            $table->time('scheduled_time')->nullable();
++        });
++
++        Schema::table('adherences', function (Blueprint $table) {
++            $table->dropForeign(['medicine_schedule_id']);
++            $table->dropColumn('medicine_schedule_id');
++        });
++    }
++};
+diff --git a/laravel_app/resources/views/medicines/edit.blade.php b/laravel_app/resources/views/medicines/edit.blade.php
+index 92520ea..cb14cbb 100644
+--- a/laravel_app/resources/views/medicines/edit.blade.php
++++ b/laravel_app/resources/views/medicines/edit.blade.php
+@@ -69,10 +69,8 @@
+             <label style="font-weight: bold;">飲むタイミング（複数選ぶと一括でスケジュールを更新します）:</label>
+             <div class="timing-grid">
+                 @php
+-                    // 現在登録されている全時刻を取得
+-                    $allRegisteredTimes = \App\Models\Medicine::where('patient_id', $medicine->patient_id)
+-                                        ->where('medicine_name', $medicine->medicine_name)
+-                                        ->whereNull('deleted_at')
++                    // 現在登録されている全時刻を取得（このお薬のスケジュールを直接参照するだけでよくなった）
++                    $allRegisteredTimes = $medicine->schedules
+                                         ->pluck('scheduled_time')
+                                         ->map(fn($t) => \Carbon\Carbon::parse($t)->format('H:i'))
+                                         ->toArray();
+diff --git a/laravel_app/resources/views/patients/index.blade.php b/laravel_app/resources/views/patients/index.blade.php
+index a6b092d..0d1c522 100644
+--- a/laravel_app/resources/views/patients/index.blade.php
++++ b/laravel_app/resources/views/patients/index.blade.php
+@@ -179,32 +179,31 @@
+                 </tr>
+             </thead>
+             <tbody>
+-            @foreach ($patient->medicines->groupBy('medicine_name') as $name => $group)
+-                @php 
+-                    $first = $group->first(); 
++            @foreach ($patient->medicines as $medicine)
++                @php
+                     $rowColorClass = $loop->odd ? 'bg-odd' : 'bg-even';
+                 @endphp
+                 <tr class="medicine-row {{ $rowColorClass }}">
+                     <td class="{{ $rowColorClass }}">
+                         <div style="display: flex; align-items: center; gap: 10px;">
+-                            @if($first->image_path)
+-                                <img src="{{ asset('storage/' . $first->image_path) }}" 
++                            @if($medicine->image_path)
++                                <img src="{{ asset('storage/' . $medicine->image_path) }}" 
+                                      class="clickable" 
+                                      style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;"
+-                                     onclick="showBigDisplay('お薬の写真', '{{ $name }}', '{{ asset('storage/' . $first->image_path) }}', '', true)">
++                                     onclick="showBigDisplay('お薬の写真', '{{ $medicine->medicine_name }}', '{{ asset('storage/' . $medicine->image_path) }}', '', true)">
+                             @endif
+-                            <strong class="medicine-name" style="font-size: 1.1em;">{{ $name }}</strong>
++                            <strong class="medicine-name" style="font-size: 1.1em;">{{ $medicine->medicine_name }}</strong>
+                         </div>
+                     </td>
+-                    <td style="text-align: center;" class="{{ $rowColorClass }}">{{ $first->dosage }}</td>
++                    <td style="text-align: center;" class="{{ $rowColorClass }}">{{ $medicine->dosage }}</td>
+                     <td class="{{ $rowColorClass }}">
+-                        @foreach ($group->sortBy('scheduled_time') as $medicine)
++                        @foreach ($medicine->schedules->sortBy('scheduled_time') as $schedule)
+                             @php
+-                                $adherence = $medicine->adherences()->where('taken_date', now()->toDateString())->first();
++                                $adherence = $schedule->adherences()->where('taken_date', now()->toDateString())->first();
+                                 $isTaken = (bool)$adherence;
+ 
+                                 // ★飲み忘れ判定ロジック★
+-                                $scheduledTime = \Carbon\Carbon::parse($medicine->scheduled_time);
++                                $scheduledTime = \Carbon\Carbon::parse($schedule->scheduled_time);
+                                 $isOverdue = !$isTaken && $scheduledTime->isBefore(now());
+                             @endphp
+                             
+@@ -219,19 +218,19 @@ class="clickable"
+                                         <div style="display: flex; align-items: center; gap: 8px;">
+                                             <span style="color: #2e7d32; font-weight: bold;" 
+                                                   class="status-taken clickable"
+-                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : $scheduledTime->format('H:i') }}', '{{ $name }}', '{{ $first->image_path ? asset('storage/' . $first->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
++                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : $scheduledTime->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
+                                                 ✅ 服用済み
+                                             </span>
+                                             <form action="{{ route('medicines.cancel') }}" method="POST" style="display:inline;">
+                                                 @csrf
+-                                                <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
++                                                <input type="hidden" name="schedule_id" value="{{ $schedule->id }}">
+                                                 <button type="submit" class="btn-danger" style="padding: 2px 8px; font-size: 10px; border-radius: 4px;">取消</button>
+                                             </form>
+                                         </div>
+                                     @else
+                                         <form action="{{ route('medicines.take') }}" method="POST" style="margin:0; display: flex; align-items: center; gap: 8px;">
+                                             @csrf
+-                                            <input type="hidden" name="medicine_id" value="{{ $medicine->id }}">
++                                            <input type="hidden" name="schedule_id" value="{{ $schedule->id }}">
+                                             <input type="text" name="note" placeholder="{{ $isOverdue ? '⚠️ 飲み忘れ！' : '体調メモ' }}" 
+        style="font-size: 0.8em; padding: 6px; border-radius: 5px; border: 1px solid {{ $isOverdue ? '#f44336' : '#ddd' }}; width: 140px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+ <button type="submit" class="btn" 
+@@ -246,8 +245,8 @@ class="status-taken clickable"
+                         @endforeach
+                     </td>
+                     <td style="text-align: center;" class="{{ $rowColorClass }}">
+-                        <a href="{{ route('medicines.edit', $first->id) }}" class="btn btn-edit" style="font-size: 16px; margin-bottom: 5px; width: 60px;">編集</a>
+-                        <form action="{{ route('medicines.destroy', $first->id) }}" method="POST" onsubmit="return confirm('同じ名前のスケジュールを全て削除しますか？');">
++                        <a href="{{ route('medicines.edit', $medicine->id) }}" class="btn btn-edit" style="font-size: 16px; margin-bottom: 5px; width: 60px;">編集</a>
++                        <form action="{{ route('medicines.destroy', $medicine->id) }}" method="POST" onsubmit="return confirm('このお薬を削除しますか？');">
+                             @csrf @method('DELETE')
+                             <button type="submit" class="btn btn-danger" style="font-size: 16px; width: 90px;">削除</button>
+                         </form>
+diff --git a/laravel_app/resources/views/patients/show.blade.php b/laravel_app/resources/views/patients/show.blade.php
+index fc4079c..4386a7b 100644
+--- a/laravel_app/resources/views/patients/show.blade.php
++++ b/laravel_app/resources/views/patients/show.blade.php
+@@ -98,6 +98,7 @@
+         </thead>
+         <tbody>
+             @foreach($patient->medicines as $medicine)
++                @foreach($medicine->schedules as $schedule)
+                 <tr>
+                     <td class="medicine-column">
+                         <div style="display: flex; align-items: center; gap: 8px;">
+@@ -109,18 +110,18 @@ class="medicine-thumb"
+                             @endif
+                             <div>
+                                 <div style="font-size: 0.9em;">{{ $medicine->medicine_name }}</div>
+-                                <div style="font-size: 0.7em; color: #666;">{{ \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}</div>
++                                <div style="font-size: 0.7em; color: #666;">{{ \Carbon\Carbon::parse($schedule->scheduled_time)->format('H:i') }}</div>
+                             </div>
+                         </div>
+                     </td>
+                     @foreach($dates as $date)
+                         @php
+-                            $adherence = $medicine->adherences->where('taken_date', $date->toDateString())->first();
++                            $adherence = $schedule->adherences->where('taken_date', $date->toDateString())->first();
+                         @endphp
+                         <td class="{{ $date->isToday() ? 'today-highlight' : '' }}"
+     style="{{ (!$adherence && $date->isPast() && !$date->isToday()) ? 'background-color: #ffebee;' : '' }}">
+     @if($adherence)
+-        <div class="check-box" onclick="showBigDisplay('{{ $date->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note) }}')">✅</div>
++        <div class="check-box" onclick="showBigDisplay('{{ $date->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : \Carbon\Carbon::parse($schedule->scheduled_time)->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note) }}')">✅</div>
+         @if($adherence->note)
+             <div style="font-size: 0.7em; color: #666; line-height: 1.1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{ Str::limit($adherence->note, 10, '…') }}</div>
+         @endif
+@@ -128,6 +129,7 @@ class="medicine-thumb"
+ </td>
+                     @endforeach
+                 </tr>
++                @endforeach
+             @endforeach
+         </tbody>
+     </table>
+diff --git a/laravel_app/resources/views/trash/index.blade.php b/laravel_app/resources/views/trash/index.blade.php
+index 112307d..52bf969 100644
+--- a/laravel_app/resources/views/trash/index.blade.php
++++ b/laravel_app/resources/views/trash/index.blade.php
+@@ -39,23 +39,22 @@
+             <th>分量</th>
+             <th>操作</th>
+         </tr>
+-        @foreach($trashedMedicines as $group)
+-            @php $first = $group->first(); @endphp
++        @foreach($trashedMedicines as $medicine)
+             <tr>
+                 <td>
+-    {{ $first->patient->name ?? '不明' }}
+-    @if($first->patient && $first->patient->nickname)
+-        <br><small style="color: #999;">（{{ $first->patient->nickname }}）</small>
++    {{ $medicine->patient->name ?? '不明' }}
++    @if($medicine->patient && $medicine->patient->nickname)
++        <br><small style="color: #999;">（{{ $medicine->patient->nickname }}）</small>
+     @endif
+ </td>
+-                <td>{{ $first->medicine_name }}</td>
+-                <td>{{ $first->dosage }}</td>
++                <td>{{ $medicine->medicine_name }}</td>
++                <td>{{ $medicine->dosage }}</td>
+                 <td>
+-                    <form action="{{ route('trash.restore', $first->id) }}" method="POST" style="display:inline;">
++                    <form action="{{ route('trash.restore', $medicine->id) }}" method="POST" style="display:inline;">
+                         @csrf
+                         <button type="submit" class="btn-restore">元に戻す</button>
+                     </form>
+-                    <form action="{{ route('trash.forceDelete', $first->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('完全に削除しますか？この操作は取り消せません。');">
++                    <form action="{{ route('trash.forceDelete', $medicine->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('完全に削除しますか？この操作は取り消せません。');">
+                         @csrf
+                         @method('DELETE')
+                         <button type="submit" class="btn-delete">完全に消す</button>
+diff --git a/laravel_app/tests/Feature/FormRequestVerificationTest.php b/laravel_app/tests/Feature/FormRequestVerificationTest.php
+index b435a4e..bd8086c 100644
+--- a/laravel_app/tests/Feature/FormRequestVerificationTest.php
++++ b/laravel_app/tests/Feature/FormRequestVerificationTest.php
+@@ -59,8 +59,8 @@ public function test_own_medicine_can_be_updated(): void
+             'patient_id' => $patient->id,
+             'medicine_name' => '薬A',
+             'dosage' => '1錠',
+-            'scheduled_time' => '08:00',
+         ]);
++        $medicine->schedules()->create(['scheduled_time' => '08:00']);
+ 
+         $response = $this->actingAs($user)->put("/medicines/{$medicine->id}", [
+             'medicine_name' => '薬A更新',
+@@ -80,8 +80,8 @@ public function test_other_users_medicine_cannot_be_updated(): void
+             'patient_id' => $patient->id,
+             'medicine_name' => '薬A',
+             'dosage' => '1錠',
+-            'scheduled_time' => '08:00',
+         ]);
++        $medicine->schedules()->create(['scheduled_time' => '08:00']);
+ 
+         $response = $this->actingAs($stranger)->put("/medicines/{$medicine->id}", [
+             'medicine_name' => '不正な更新',
+diff --git a/laravel_app/tests/Feature/MedicineScheduleDesignTest.php b/laravel_app/tests/Feature/MedicineScheduleDesignTest.php
+new file mode 100644
+index 0000000..cf4f1c3
+--- /dev/null
++++ b/laravel_app/tests/Feature/MedicineScheduleDesignTest.php
+@@ -0,0 +1,76 @@
++<?php
++
++namespace Tests\Feature;
++
++use App\Models\Medicine;
++use App\Models\Patient;
++use App\Models\User;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Tests\TestCase;
++
++class MedicineScheduleDesignTest extends TestCase
++{
++    use RefreshDatabase;
++
++    public function test_medicine_can_have_multiple_schedules(): void
++    {
++        $user = User::factory()->create();
++        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
++        $medicine = Medicine::create([
++            'patient_id' => $patient->id,
++            'medicine_name' => '薬A',
++            'dosage' => '1錠',
++        ]);
++        $medicine->schedules()->create(['scheduled_time' => '08:00']);
++        $medicine->schedules()->create(['scheduled_time' => '20:00']);
++
++        $this->assertCount(2, $medicine->fresh()->schedules);
++    }
++
++    public function test_take_and_cancel_work_per_schedule(): void
++    {
++        $user = User::factory()->create();
++        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
++        $medicine = Medicine::create([
++            'patient_id' => $patient->id,
++            'medicine_name' => '薬A',
++            'dosage' => '1錠',
++        ]);
++        $morning = $medicine->schedules()->create(['scheduled_time' => '08:00']);
++        $evening = $medicine->schedules()->create(['scheduled_time' => '20:00']);
++
++        // 朝の分だけ「飲んだ」を記録する
++        $this->actingAs($user)->post('/medicines/take', ['schedule_id' => $morning->id]);
++
++        $this->assertCount(1, $morning->fresh()->adherences);
++        $this->assertCount(0, $evening->fresh()->adherences);
++
++        // 朝の分を取り消す
++        $this->actingAs($user)->post('/medicines/cancel', ['schedule_id' => $morning->id]);
++
++        $this->assertCount(0, $morning->fresh()->adherences);
++    }
++
++    public function test_deleting_medicine_moves_it_to_trash_and_can_be_restored(): void
++    {
++        $user = User::factory()->create();
++        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
++        $medicine = Medicine::create([
++            'patient_id' => $patient->id,
++            'medicine_name' => '薬A',
++            'dosage' => '1錠',
++        ]);
++        $medicine->schedules()->create(['scheduled_time' => '08:00']);
++
++        // 削除（ゴミ箱へ）
++        $this->actingAs($user)->delete("/medicines/{$medicine->id}");
++        $this->assertSoftDeleted('medicines', ['id' => $medicine->id]);
++
++        // 復元
++        $this->actingAs($user)->post("/trash/{$medicine->id}/restore");
++        $this->assertDatabaseHas('medicines', ['id' => $medicine->id, 'deleted_at' => null]);
++
++        // 復元後もスケジュールがそのまま残っていること
++        $this->assertCount(1, $medicine->fresh()->schedules);
++    }
++}
+diff --git a/laravel_app/tests/Feature/MedicineServiceTest.php b/laravel_app/tests/Feature/MedicineServiceTest.php
+index 0fa0c58..e559f10 100644
+--- a/laravel_app/tests/Feature/MedicineServiceTest.php
++++ b/laravel_app/tests/Feature/MedicineServiceTest.php
+@@ -41,7 +41,8 @@ public function test_store_creates_one_medicine_per_selected_time(): void
+         ]);
+ 
+         $response->assertRedirect('/patients');
+-        $this->assertDatabaseCount('medicines', 2);
++        $this->assertDatabaseCount('medicines', 1);
++        $this->assertDatabaseCount('medicine_schedules', 2);
+     }
+ 
+     public function test_update_fails_when_no_valid_time_is_selected(): void
+@@ -52,8 +53,8 @@ public function test_update_fails_when_no_valid_time_is_selected(): void
+             'patient_id' => $patient->id,
+             'medicine_name' => '薬A',
+             'dosage' => '1錠',
+-            'scheduled_time' => '08:00',
+         ]);
++        $medicine->schedules()->create(['scheduled_time' => '08:00']);
+ 
+         $response = $this->actingAs($user)->put("/medicines/{$medicine->id}", [
+             'medicine_name' => '薬A',
+diff --git a/laravel_app/tests/Feature/PolicyAuthorizationTest.php b/laravel_app/tests/Feature/PolicyAuthorizationTest.php
+index 16f2391..672b41a 100644
+--- a/laravel_app/tests/Feature/PolicyAuthorizationTest.php
++++ b/laravel_app/tests/Feature/PolicyAuthorizationTest.php
+@@ -68,10 +68,10 @@ public function test_stranger_cannot_edit_others_medicine(): void
+ 
+     public function test_stranger_cannot_take_others_medicine(): void
+     {
+-        [$stranger, $medicine] = $this->createMedicineOwnedByAnotherUser();
++        [$stranger, $medicine, $schedule] = $this->createMedicineOwnedByAnotherUser();
+ 
+         $response = $this->actingAs($stranger)->post('/medicines/take', [
+-            'medicine_id' => $medicine->id,
++            'schedule_id' => $schedule->id,
+         ]);
+ 
+         $response->assertStatus(403);
+@@ -79,15 +79,16 @@ public function test_stranger_cannot_take_others_medicine(): void
+ 
+     public function test_stranger_cannot_cancel_others_medicine(): void
+     {
+-        [$stranger, $medicine] = $this->createMedicineOwnedByAnotherUser();
++        [$stranger, $medicine, $schedule] = $this->createMedicineOwnedByAnotherUser();
+         Adherence::create([
+             'medicine_id' => $medicine->id,
++            'medicine_schedule_id' => $schedule->id,
+             'taken_date' => now()->toDateString(),
+             'taken_time' => now()->format('H:i:s'),
+         ]);
+ 
+         $response = $this->actingAs($stranger)->post('/medicines/cancel', [
+-            'medicine_id' => $medicine->id,
++            'schedule_id' => $schedule->id,
+         ]);
+ 
+         $response->assertStatus(403);
+@@ -103,7 +104,7 @@ public function test_stranger_cannot_delete_others_medicine(): void
+     }
+ 
+     /**
+-     * 他人の患者・お薬データを1件作成し、[部外者ユーザー, お薬] を返す共通ヘルパー
++     * 他人の患者・お薬データを1件作成し、[部外者ユーザー, お薬, スケジュール] を返す共通ヘルパー
+      */
+     private function createMedicineOwnedByAnotherUser(): array
+     {
+@@ -114,9 +115,9 @@ private function createMedicineOwnedByAnotherUser(): array
+             'patient_id' => $patient->id,
+             'medicine_name' => '薬A',
+             'dosage' => '1錠',
+-            'scheduled_time' => '08:00',
+         ]);
++        $schedule = $medicine->schedules()->create(['scheduled_time' => '08:00']);
+ 
+-        return [$stranger, $medicine];
++        return [$stranger, $medicine, $schedule];
+     }
+ }

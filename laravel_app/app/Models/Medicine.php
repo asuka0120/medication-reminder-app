@@ -13,13 +13,11 @@ class Medicine extends Model
 
     /**
      * 一括割り当て（createメソッドなど）を許可する項目
-     * ここに patient_id が抜けていたため、エラーが発生していました。
      */
     protected $fillable = [
         'patient_id',    // 患者ID
         'medicine_name', // お薬名
         'dosage',        // 分量・飲み方
-        'scheduled_time', // 服用時刻
         'image_path',    // 画像の保存パス
     ];
 
@@ -32,10 +30,10 @@ class Medicine extends Model
     }
 
     /**
-     * リレーション設定：一つのお薬は、たくさんの服用記録（adherences）を持っている
+     * リレーション設定：一つのお薬は、たくさんの服用スケジュール（何時に飲むか）を持っている
      */
-    public function adherences()
+    public function schedules()
     {
-        return $this->hasMany(Adherence::class);
+        return $this->hasMany(MedicineSchedule::class);
     }
 }

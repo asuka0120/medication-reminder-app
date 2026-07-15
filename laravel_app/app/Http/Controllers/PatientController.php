@@ -16,7 +16,7 @@ class PatientController extends Controller
     public function index()
     {
         // ログインしているユーザーの患者さんだけを取得する
-        $patients = auth()->user()->patients()->with('medicines')->get();
+        $patients = auth()->user()->patients()->with('medicines.schedules')->get();
 
         return view('patients.index', compact('patients'));
     }
@@ -68,7 +68,7 @@ class PatientController extends Controller
         $nextMonth = $date->copy()->addMonth()->format('Y-m');
 
         // 3. お薬と、その期間の服用記録を読み込む
-        $patient->load(['medicines.adherences' => function ($query) use ($startOfMonth, $endOfMonth) {
+        $patient->load(['medicines.schedules.adherences' => function ($query) use ($startOfMonth, $endOfMonth) {
             $query->whereBetween('taken_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()]);
         }]);
 

@@ -98,6 +98,7 @@
         </thead>
         <tbody>
             @foreach($patient->medicines as $medicine)
+                @foreach($medicine->schedules as $schedule)
                 <tr>
                     <td class="medicine-column">
                         <div style="display: flex; align-items: center; gap: 8px;">
@@ -109,18 +110,18 @@
                             @endif
                             <div>
                                 <div style="font-size: 0.9em;">{{ $medicine->medicine_name }}</div>
-                                <div style="font-size: 0.7em; color: #666;">{{ \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}</div>
+                                <div style="font-size: 0.7em; color: #666;">{{ \Carbon\Carbon::parse($schedule->scheduled_time)->format('H:i') }}</div>
                             </div>
                         </div>
                     </td>
                     @foreach($dates as $date)
                         @php
-                            $adherence = $medicine->adherences->where('taken_date', $date->toDateString())->first();
+                            $adherence = $schedule->adherences->where('taken_date', $date->toDateString())->first();
                         @endphp
                         <td class="{{ $date->isToday() ? 'today-highlight' : '' }}"
     style="{{ (!$adherence && $date->isPast() && !$date->isToday()) ? 'background-color: #ffebee;' : '' }}">
     @if($adherence)
-        <div class="check-box" onclick="showBigDisplay('{{ $date->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : \Carbon\Carbon::parse($medicine->scheduled_time)->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note) }}')">✅</div>
+        <div class="check-box" onclick="showBigDisplay('{{ $date->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : \Carbon\Carbon::parse($schedule->scheduled_time)->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note) }}')">✅</div>
         @if($adherence->note)
             <div style="font-size: 0.7em; color: #666; line-height: 1.1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{ Str::limit($adherence->note, 10, '…') }}</div>
         @endif
@@ -128,6 +129,7 @@
 </td>
                     @endforeach
                 </tr>
+                @endforeach
             @endforeach
         </tbody>
     </table>

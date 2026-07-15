@@ -15,9 +15,13 @@ class Kernel extends ConsoleKernel
         // 1分ごとに、今飲むべき薬があるかチェックする
         $schedule->call(function () {
             $now = now()->format('H:i');
-            $medicines = \App\Models\Medicine::where('scheduled_time', $now.':00')->get();
+            $schedules = \App\Models\MedicineSchedule::with('medicine.patient')
+                ->where('scheduled_time', $now.':00')
+                ->get();
 
-            foreach ($medicines as $medicine) {
+            foreach ($schedules as $medicineSchedule) {
+                $medicine = $medicineSchedule->medicine;
+
                 // 管理者（あなた）に通知を送る
                 $user = \App\Models\User::first();
                 if ($user) {

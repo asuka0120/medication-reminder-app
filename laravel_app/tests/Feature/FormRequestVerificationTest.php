@@ -59,8 +59,8 @@ class FormRequestVerificationTest extends TestCase
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',
             'dosage' => '1錠',
-            'scheduled_time' => '08:00',
         ]);
+        $medicine->schedules()->create(['scheduled_time' => '08:00']);
 
         $response = $this->actingAs($user)->put("/medicines/{$medicine->id}", [
             'medicine_name' => '薬A更新',
@@ -80,8 +80,8 @@ class FormRequestVerificationTest extends TestCase
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',
             'dosage' => '1錠',
-            'scheduled_time' => '08:00',
         ]);
+        $medicine->schedules()->create(['scheduled_time' => '08:00']);
 
         $response = $this->actingAs($stranger)->put("/medicines/{$medicine->id}", [
             'medicine_name' => '不正な更新',

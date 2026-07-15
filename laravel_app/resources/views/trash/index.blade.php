@@ -39,23 +39,22 @@
             <th>分量</th>
             <th>操作</th>
         </tr>
-        @foreach($trashedMedicines as $group)
-            @php $first = $group->first(); @endphp
+        @foreach($trashedMedicines as $medicine)
             <tr>
                 <td>
-    {{ $first->patient->name ?? '不明' }}
-    @if($first->patient && $first->patient->nickname)
-        <br><small style="color: #999;">（{{ $first->patient->nickname }}）</small>
+    {{ $medicine->patient->name ?? '不明' }}
+    @if($medicine->patient && $medicine->patient->nickname)
+        <br><small style="color: #999;">（{{ $medicine->patient->nickname }}）</small>
     @endif
 </td>
-                <td>{{ $first->medicine_name }}</td>
-                <td>{{ $first->dosage }}</td>
+                <td>{{ $medicine->medicine_name }}</td>
+                <td>{{ $medicine->dosage }}</td>
                 <td>
-                    <form action="{{ route('trash.restore', $first->id) }}" method="POST" style="display:inline;">
+                    <form action="{{ route('trash.restore', $medicine->id) }}" method="POST" style="display:inline;">
                         @csrf
                         <button type="submit" class="btn-restore">元に戻す</button>
                     </form>
-                    <form action="{{ route('trash.forceDelete', $first->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('完全に削除しますか？この操作は取り消せません。');">
+                    <form action="{{ route('trash.forceDelete', $medicine->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('完全に削除しますか？この操作は取り消せません。');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn-delete">完全に消す</button>
