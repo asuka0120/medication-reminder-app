@@ -127,7 +127,7 @@
     </form>
 
     <br>
-    <a href="/patients" style="display: block; text-align: center; color: #607D8B; text-decoration: none;">← 一覧に戻る</a>
+    <a href="{{ route('patients.index') }}" style="display: block; text-align: center; color: #607D8B; text-decoration: none;">← 一覧に戻る</a>
 </div>
 
 <script>

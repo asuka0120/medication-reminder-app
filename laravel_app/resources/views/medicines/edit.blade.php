@@ -159,7 +159,7 @@
     </form>
 
     <div style="text-align: center; margin-top: 20px;">
-        <a href="/patients" style="color: #666; text-decoration: none;">← キャンセルして戻る</a>
+        <a href="{{ route('patients.index') }}" style="color: #666; text-decoration: none;">← キャンセルして戻る</a>
     </div>
 </div>
 

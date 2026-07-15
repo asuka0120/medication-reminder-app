@@ -44,7 +44,7 @@ class MedicineController extends Controller
                 ->with('error_message', '服用時間が設定されていません。チェックボックスを選ぶか、自由な時間を入力してください。');
         }
 
-        return redirect('/patients')->with('success', 'お薬を一括登録しました。');
+        return redirect()->route('patients.index')->with('success', 'お薬を一括登録しました。');
     }
 
     /**
@@ -79,7 +79,7 @@ class MedicineController extends Controller
                 ->with('error_message', '服用時間が設定されていません。チェックボックスを選ぶか、自由な時間を入力してください。');
         }
 
-        return redirect('/patients')->with('success', 'お薬情報を一括更新しました。');
+        return redirect()->route('patients.index')->with('success', 'お薬情報を一括更新しました。');
     }
 
     /**

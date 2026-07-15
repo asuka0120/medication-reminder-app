@@ -121,7 +121,7 @@
 <h1>ご家族のための服薬管理（くすりサポート）</h1>
 
 <div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-    <a href="/patients/create" style="text-decoration: none; font-weight: bold; color: #1976D2;">＋ 新しく家族を登録する</a>
+    <a href="{{ route('patients.create') }}" style="text-decoration: none; font-weight: bold; color: #1976D2;">＋ 新しく家族を登録する</a>
     <a href="{{ route('trash.index') }}" style="color: #607D8B; text-decoration: none;">[ 🗑 ゴミ箱を見る ]</a>
     <button id="notify-btn" onclick="toggleNotifications()" class="btn" style="background-color: #ff9800; color: white; min-width: 180px;">
     🔔 通知設定を確認中...

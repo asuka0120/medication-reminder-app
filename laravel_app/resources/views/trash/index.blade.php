@@ -102,7 +102,7 @@
     </table>
 @endif
 
-<a href="/patients" class="back-btn">← 一覧に戻る</a>
+<a href="{{ route('patients.index') }}" class="back-btn">← 一覧に戻る</a>
 
 </body>
 </html>

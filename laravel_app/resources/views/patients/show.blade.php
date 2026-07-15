@@ -133,7 +133,7 @@
     </table>
 </div>
 
-<a href="/patients" style="display: inline-block; margin-top: 25px; color: #ffffff; background-color: #5d4037; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold;">← 一覧に戻る</a>
+<a href="{{ route('patients.index') }}" style="display: inline-block; margin-top: 25px; color: #ffffff; background-color: #5d4037; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold;">← 一覧に戻る</a>
 
 <div id="big-display-area" onclick="hideBigDisplay()">
     <div class="modal-content" onclick="event.stopPropagation()">

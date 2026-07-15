@@ -1,7 +1,7 @@
 <h1>ゴミ箱（削除済みのお薬一覧）</h1>
 
 <div style="margin-bottom: 20px;">
-    <a href="/patients">← お薬一覧に戻る</a>
+    <a href="{{ route('patients.index') }}">← お薬一覧に戻る</a>
 </div>
 
 @if($trashedMedicines->isEmpty())

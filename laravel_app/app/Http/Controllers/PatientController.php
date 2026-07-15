@@ -43,7 +43,7 @@ class PatientController extends Controller
         $patient->memo = $request->memo;
         $patient->save();
 
-        return redirect('/patients');
+        return redirect()->route('patients.index');
     }
 
     /**
@@ -117,7 +117,7 @@ class PatientController extends Controller
         $patient->memo = $request->memo;
         $patient->save();
 
-        return redirect('/patients')->with('success', '家族情報を更新しました。');
+        return redirect()->route('patients.index')->with('success', '家族情報を更新しました。');
     }
 
     /**

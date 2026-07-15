@@ -68,7 +68,7 @@
 
         <div style="display: flex; gap: 15px;">
             <button type="submit" class="btn btn-primary">この内容で更新する</button>
-            <a href="/patients" class="btn btn-back">キャンセル</a>
+            <a href="{{ route('patients.index') }}" class="btn btn-back">キャンセル</a>
         </div>
     </form>
 </div>

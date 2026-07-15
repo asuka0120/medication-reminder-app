@@ -1,7 +1,7 @@
 <h1>週間の服薬レポート</h1>
 
 <div style="margin-bottom: 20px;">
-    <a href="/patients">← お薬一覧に戻る</a>
+    <a href="{{ route('patients.index') }}">← お薬一覧に戻る</a>
 </div>
 
 @foreach($patients as $patient)
