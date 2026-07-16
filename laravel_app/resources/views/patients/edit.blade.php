@@ -41,30 +41,7 @@
         @csrf
         @method('PATCH')
 
-        {{-- お名前入力 --}}
-        <div style="margin-bottom: 25px;">
-            <label for="name" style="display: block; font-weight: bold; margin-bottom: 12px; font-size: 18px; color: #5D4037;">お名前（フルネーム）:</label>
-            <input type="text" name="name" id="name" value="{{ old('name', $patient->name) }}"
-                style="width: 100%; padding: 15px; font-size: 18px; border: 2px solid #D7CCC8; border-radius: 10px; box-sizing: border-box;">
-            {{-- エラーメッセージ表示 --}}
-            @error('name')
-                <p style="color: #d32f2f; font-size: 14px; margin-top: 8px;">{{ $message }}</p>
-            @enderror
-        </div>
-
-        {{-- ニックネーム入力 --}}
-        <div style="margin-bottom: 25px;">
-            <label for="nickname" style="display: block; font-weight: bold; margin-bottom: 12px; font-size: 18px; color: #5D4037;">ご家族からの呼び名（任意）:</label>
-            <input type="text" name="nickname" id="nickname" value="{{ old('nickname', $patient->nickname) }}" placeholder="例：おじいちゃん"
-                style="width: 100%; padding: 15px; font-size: 18px; border: 2px solid #D7CCC8; border-radius: 10px; box-sizing: border-box;">
-        </div>
-
-        {{-- メモ入力 --}}
-        <div style="margin-bottom: 25px;">
-            <label for="memo" style="display: block; font-weight: bold; margin-bottom: 12px; font-size: 18px; color: #5D4037;">備考（注意点など）:</label>
-            <textarea name="memo" id="memo" placeholder="例：お水多めで。食後すぐ。" rows="4"
-                style="width: 100%; padding: 15px; font-size: 18px; border: 2px solid #D7CCC8; border-radius: 10px; box-sizing: border-box;">{{ old('memo', $patient->memo) }}</textarea>
-        </div>
+        @include('patients._fields', ['patient' => $patient])
 
         <div style="display: flex; gap: 15px;">
             <button type="submit" class="btn btn-primary">この内容で更新する</button>
