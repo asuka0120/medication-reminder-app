@@ -44,7 +44,8 @@
 </style>
 
 @php
-    // ★共通パーシャルに渡すための変数を準備する
+    // _dosage_field.blade.php などの共通パーツは新規登録・編集どちらからも使われるが、
+    // 渡す変数の中身を画面ごとに変えることで、表示される内容も画面に合わせて変わる
     $dosageOptions = ['1回 1錠（食後）', '1回 2錠（食後）', '1回 1カプセル（食後）', '1回 1錠（寝る前）', '頓服（痛いときなど）'];
     $currentDosage = old('dosage_select', in_array($medicine->dosage, $dosageOptions) ? $medicine->dosage : 'other');
     $manualDosage = old('dosage_manual', (! in_array($medicine->dosage, $dosageOptions)) ? $medicine->dosage : '');

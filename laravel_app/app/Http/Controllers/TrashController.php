@@ -10,9 +10,10 @@ class TrashController extends Controller
     // ゴミ箱一覧
     public function index()
     {
-        // ★テーブル設計の見直しにより、1件の薬＝1行になったので、
-        //   以前のような medicine_name によるグループ化は不要になった。
+        // テーブル設計の見直しにより、1件の薬＝1行になったので、
+        // 以前のような medicine_name によるグループ化は不要になった。
         $trashedMedicines = Medicine::onlyTrashed()->with(['patient' => function ($query) {
+            // 患者さんも削除されていた場合、患者情報が取得できずエラー画面になるのを防ぐため
             $query->withTrashed();
         }])->get();
         $trashedPatients = Patient::onlyTrashed()->get();

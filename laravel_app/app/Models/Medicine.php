@@ -4,12 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes; // ゴミ箱機能用
+use Illuminate\Database\Eloquent\SoftDeletes; // ゴミ箱機能：誤って削除すると、これまでの服用時間や記録も一緒に失われてしまうため
 
 class Medicine extends Model
 {
     use HasFactory;
-    use SoftDeletes; // ゴミ箱機能（論理削除）を有効化
+    use SoftDeletes; // ゴミ箱機能：誤って削除すると、これまでの服用時間や記録も一緒に失われてしまうため
 
     /**
      * 一括割り当て（createメソッドなど）を許可する項目

@@ -202,7 +202,8 @@
                                 $adherence = $schedule->adherences()->where('taken_date', now()->toDateString())->first();
                                 $isTaken = (bool)$adherence;
 
-                                // ★飲み忘れ判定ロジック★
+                                // 予定時刻が過ぎていること、飲んだボタンを押していないこと、この2つの条件をチェックする必要がある。
+                                // なぜなら、もう飲んだ薬まで「飲み忘れ」の警告が出続けるから
                                 $scheduledTime = \Carbon\Carbon::parse($schedule->scheduled_time);
                                 $isOverdue = !$isTaken && $scheduledTime->isBefore(now());
                             @endphp

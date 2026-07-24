@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+// Breeze導入時の初期状態のまま。メール認証機能はまだ手をつけていない
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;

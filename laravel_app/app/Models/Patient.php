@@ -4,12 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes; // 追加
+use Illuminate\Database\Eloquent\SoftDeletes; // ゴミ箱機能：誤って削除すると、お薬の登録からやり直しになるため
 
 class Patient extends Model
 {
     use HasFactory;
-    use SoftDeletes; // 追加
+    use SoftDeletes; // ゴミ箱機能：誤って削除すると、お薬の登録からやり直しになるため
 
     /**
      * 登録・編集を許可する列の一覧

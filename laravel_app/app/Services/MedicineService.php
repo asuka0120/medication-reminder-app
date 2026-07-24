@@ -22,7 +22,7 @@ class MedicineService
         $dosage = $this->resolveDosage($request);
         $imagePath = $this->storeImageIfPresent($request);
 
-        // 1. 薬本体を1件だけ作成する
+        // 1. 「アスピリン」のような1種類の薬本体（薬名・分量・画像）は1回だけ作成する
         $medicine = Medicine::create([
             'patient_id' => $request->patient_id,
             'medicine_name' => $request->medicine_name,
@@ -30,7 +30,7 @@ class MedicineService
             'image_path' => $imagePath,
         ]);
 
-        // 2. 選んだ時刻の数だけスケジュールを作成する
+        // 2. 飲むタイミング（朝・昼・晩など）の数だけスケジュールを作成する
         foreach ($selectedTimes as $time) {
             $medicine->schedules()->create(['scheduled_time' => $time]);
         }
@@ -58,7 +58,8 @@ class MedicineService
         }
         $medicine->save();
 
-        // 2. 古いスケジュールを一度削除してから、新しい時刻で作り直す
+        // 2. 古いスケジュールは一度全部消してから作り直す。
+        // 「残す・消す・追加する」を1件ずつ判定するコードを書かなくて良い、シンプルでバグが入りにくいため
         $medicine->schedules()->delete();
         foreach ($selectedTimings as $time) {
             $medicine->schedules()->create(['scheduled_time' => $time]);

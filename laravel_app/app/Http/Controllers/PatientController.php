@@ -68,6 +68,8 @@ class PatientController extends Controller
         $nextMonth = $date->copy()->addMonth()->format('Y-m');
 
         // 3. お薬と、その期間の服用記録を読み込む
+        // 月間カレンダーは、その月の日数分しか表示しないのに、過去の月の服薬記録を毎回全部読み込むと、
+        // 件数が増えるほど無駄が多く表示が遅くなるため
         $patient->load(['medicines.schedules.adherences' => function ($query) use ($startOfMonth, $endOfMonth) {
             $query->whereBetween('taken_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()]);
         }]);
