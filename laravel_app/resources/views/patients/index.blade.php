@@ -222,16 +222,14 @@
                                                   onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : $scheduledTime->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
                                                 ✅ 服用済み
                                             </span>
-                                            <form action="{{ route('medicines.cancel') }}" method="POST" style="display:inline;">
+                                            <form action="{{ route('medicine-schedules.cancel', $schedule->id) }}" method="POST" style="display:inline;">
                                                 @csrf
-                                                <input type="hidden" name="schedule_id" value="{{ $schedule->id }}">
                                                 <button type="submit" class="btn-danger" style="padding: 2px 8px; font-size: 10px; border-radius: 4px;">取消</button>
                                             </form>
                                         </div>
                                     @else
-                                        <form action="{{ route('medicines.take') }}" method="POST" style="margin:0; display: flex; align-items: center; gap: 8px;">
+                                        <form action="{{ route('medicine-schedules.take', $schedule->id) }}" method="POST" style="margin:0; display: flex; align-items: center; gap: 8px;">
                                             @csrf
-                                            <input type="hidden" name="schedule_id" value="{{ $schedule->id }}">
                                             <input type="text" name="note" placeholder="{{ $isOverdue ? '⚠️ 飲み忘れ！' : '体調メモ' }}" 
        style="font-size: 0.8em; padding: 6px; border-radius: 5px; border: 1px solid {{ $isOverdue ? '#f44336' : '#ddd' }}; width: 140px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
 <button type="submit" class="btn" 

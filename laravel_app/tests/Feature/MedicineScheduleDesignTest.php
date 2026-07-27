@@ -40,13 +40,13 @@ class MedicineScheduleDesignTest extends TestCase
         $evening = $medicine->schedules()->create(['scheduled_time' => '20:00']);
 
         // 朝の分だけ「飲んだ」を記録する
-        $this->actingAs($user)->post('/medicines/take', ['schedule_id' => $morning->id]);
+        $this->actingAs($user)->post("/medicine-schedules/{$morning->id}/take");
 
         $this->assertCount(1, $morning->fresh()->adherences);
         $this->assertCount(0, $evening->fresh()->adherences);
 
         // 朝の分を取り消す
-        $this->actingAs($user)->post('/medicines/cancel', ['schedule_id' => $morning->id]);
+        $this->actingAs($user)->post("/medicine-schedules/{$morning->id}/cancel");
 
         $this->assertCount(0, $morning->fresh()->adherences);
     }

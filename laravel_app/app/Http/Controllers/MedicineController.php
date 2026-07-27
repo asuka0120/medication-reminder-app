@@ -86,10 +86,8 @@ class MedicineController extends Controller
     /**
      * 「飲んだ！」ボタン：服用記録とメモを保存する
      */
-    public function take(Request $request)
+    public function take(Request $request, MedicineSchedule $schedule)
     {
-        $schedule = MedicineSchedule::findOrFail($request->schedule_id);
-
         // ログインユーザーの患者の薬かどうか確認する
         $this->authorize('update', $schedule->medicine);
 
@@ -107,10 +105,8 @@ class MedicineController extends Controller
     /**
      * 「取消」ボタン：今日の服用記録を削除する
      */
-    public function cancel(Request $request)
+    public function cancel(MedicineSchedule $schedule)
     {
-        $schedule = MedicineSchedule::findOrFail($request->schedule_id);
-
         // ログインユーザーの患者の薬かどうか確認する
         $this->authorize('update', $schedule->medicine);
 

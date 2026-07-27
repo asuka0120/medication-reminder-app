@@ -37,11 +37,13 @@ Route::middleware(['auth', 'nocache'])->group(function () {
     Route::resource('patients', PatientController::class);
 
     // 薬管理
-    Route::resource('medicines', MedicineController::class);
+    // MedicineControllerにはindex()・show()が存在しないため、
+    // 使わないアクションはexcept()で明示的に除外する
+    Route::resource('medicines', MedicineController::class)->except(['index', 'show']);
 
-    // 服薬記録（MedicineControllerで処理）
-    Route::post('/medicines/take', [MedicineController::class, 'take'])->name('medicines.take');
-    Route::post('/medicines/cancel', [MedicineController::class, 'cancel'])->name('medicines.cancel');
+    // 服薬記録：どのスケジュール（何時の分）を対象にするかをURLに含める
+    Route::post('/medicine-schedules/{schedule}/take', [MedicineController::class, 'take'])->name('medicine-schedules.take');
+    Route::post('/medicine-schedules/{schedule}/cancel', [MedicineController::class, 'cancel'])->name('medicine-schedules.cancel');
 
     // ゴミ箱
     Route::get('/trash', [TrashController::class, 'index'])->name('trash.index');

@@ -70,9 +70,7 @@ class PolicyAuthorizationTest extends TestCase
     {
         [$stranger, $medicine, $schedule] = $this->createMedicineOwnedByAnotherUser();
 
-        $response = $this->actingAs($stranger)->post('/medicines/take', [
-            'schedule_id' => $schedule->id,
-        ]);
+        $response = $this->actingAs($stranger)->post("/medicine-schedules/{$schedule->id}/take");
 
         $response->assertStatus(403);
     }
@@ -87,9 +85,7 @@ class PolicyAuthorizationTest extends TestCase
             'taken_time' => now()->format('H:i:s'),
         ]);
 
-        $response = $this->actingAs($stranger)->post('/medicines/cancel', [
-            'schedule_id' => $schedule->id,
-        ]);
+        $response = $this->actingAs($stranger)->post("/medicine-schedules/{$schedule->id}/cancel");
 
         $response->assertStatus(403);
     }
