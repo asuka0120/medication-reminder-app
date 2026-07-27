@@ -13,9 +13,15 @@
         @endforeach
         <option value="other" {{ $currentDosage === 'other' ? 'selected' : '' }}>★その他（自由に書き込む）</option>
     </select>
+    @error('dosage_select')
+        <p style="color: #d32f2f; font-size: 14px; margin-top: 8px;">{{ $message }}</p>
+    @enderror
 
     <div id="dosage_manual_group" style="display: {{ $currentDosage === 'other' ? 'block' : 'none' }}; margin-top: 10px; padding: 15px; background-color: #f0f8ff; border-radius: 8px; border: 1px dashed #2196F3;">
         <label style="font-size: 0.9em; color: #2196F3; font-weight: bold;">具体的な飲み方を入力：</label>
         <input type="text" id="dosage_manual" name="dosage_manual" value="{{ $manualDosage }}" placeholder="例：半分に割って飲む" class="input-field">
+        @error('dosage_manual')
+            <p style="color: #d32f2f; font-size: 14px; margin-top: 8px;">{{ $message }}</p>
+        @enderror
     </div>
 </div>

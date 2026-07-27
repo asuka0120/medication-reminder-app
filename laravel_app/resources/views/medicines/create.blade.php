@@ -57,6 +57,9 @@
     <form action="{{ route('medicines.store') }}" method="POST" enctype="multipart/form-data" onsubmit="return checkTimes()">
         @csrf
         <input type="hidden" name="patient_id" value="{{ $patient->id }}">
+        @error('patient_id')
+            <p style="color: #d32f2f; font-size: 14px; margin-top: 8px;">{{ $message }}</p>
+        @enderror
 
         {{-- 1. お薬名 --}}
         <div class="form-group">

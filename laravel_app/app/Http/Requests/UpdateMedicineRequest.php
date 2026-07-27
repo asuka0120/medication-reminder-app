@@ -26,7 +26,11 @@ class UpdateMedicineRequest extends FormRequest
         return [
             'medicine_name' => 'required|string|max:50',
             'timings' => 'required|array',
-            'dosage_select' => 'required',
+            // 空欄（未使用の自由入力欄）は許容しつつ、値がある場合はHH:MM形式であることを検証する
+            'timings.*' => 'nullable|date_format:H:i',
+            'dosage_select' => 'required|string',
+            // 「その他」を選んだときだけ、手入力欄を必須にする（条件付きバリデーション）
+            'dosage_manual' => 'nullable|required_if:dosage_select,other|string|max:100',
             'image' => 'nullable|image|max:2048',
         ];
     }

@@ -103,8 +103,35 @@ return [
     'uuid' => ':attributeは有効なUUIDでなければなりません。',
 
     'custom' => [
-        'attribute-name' => [
-            'rule-name' => 'custom-message',
+        'patient_id' => [
+            'required' => '患者情報が指定されていません。',
+            'integer' => '患者情報が正しくありません。',
+            'exists' => '指定された患者が見つかりません。すでに削除されている可能性があります。',
+        ],
+        'medicine_name' => [
+            'required' => '薬名は必須です。',
+            'max' => '薬名は50文字以内で入力してください。',
+        ],
+        'dosage_select' => [
+            'required' => '分量・飲み方を選択してください。',
+        ],
+        'dosage_manual' => [
+            'required_if' => '「その他」を選んだ場合は、具体的な飲み方を入力してください。',
+            'max' => '飲み方は100文字以内で入力してください。',
+        ],
+        'times.*' => [
+            'date_format' => '服用時間の形式が正しくありません（例：08:00）。',
+        ],
+        'timings' => [
+            'required' => '服用時間を1つ以上選択してください。',
+        ],
+        'timings.*' => [
+            'date_format' => '服用時間の形式が正しくありません（例：08:00）。',
+        ],
+        'image' => [
+            'image' => '画像ファイルを選択してください。',
+            'mimes' => '対応していないファイル形式です。JPEGまたはPNGをアップロードしてください。',
+            'max' => 'ファイルサイズは2MB以下にしてください。',
         ],
     ],
 
@@ -114,5 +141,12 @@ return [
         'password' => 'パスワード',
         'password_confirmation' => 'パスワード（確認）',
         'current_password' => '現在のパスワード',
+        'patient_id' => '患者',
+        'medicine_name' => '薬名',
+        'dosage_select' => '分量・飲み方',
+        'dosage_manual' => '飲み方（手入力）',
+        'times' => '服用時間',
+        'timings' => '服用時間',
+        'image' => '画像',
     ],
 ];

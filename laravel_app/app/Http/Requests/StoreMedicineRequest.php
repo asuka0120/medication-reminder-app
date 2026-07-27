@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Patient;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreMedicineRequest extends FormRequest
 {
@@ -15,7 +16,17 @@ class StoreMedicineRequest extends FormRequest
     {
         $patient = Patient::find($this->patient_id);
 
-        return $patient && $this->user()->can('update', $patient);
+        // patient_idが存在しない（空欄・不正な値を含む）場合は、ここでは弾かない。
+        // Laravelはauthorize()をrules()より先に実行するため、ここでfalseを返すと
+        // 「他人の患者(403)」と「存在しない患者(本来は422)」の区別ができなくなってしまう。
+        // 存在チェックはrules()側のexistsルールに任せ、ここではtrueを返して素通りさせる。
+        if (! $patient) {
+            return true;
+        }
+
+        // 患者が実在する場合のみ、「ログインユーザー自身の患者か」を判定する。
+        // 他人の患者であればfalse（403：あなたの患者ではありません、の意味）。
+        return $this->user()->can('update', $patient);
     }
 
     /**
@@ -24,22 +35,20 @@ class StoreMedicineRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'patient_id' => [
+                'required',
+                'integer',
+                // ゴミ箱（ソフトデリート）に入っている患者のIDは「存在しない」扱いにする
+                Rule::exists('patients', 'id')->whereNull('deleted_at'),
+            ],
             'medicine_name' => 'required|string|max:50',
+            'dosage_select' => 'required|string',
+            // 「その他」を選んだときだけ、手入力欄を必須にする（条件付きバリデーション）
+            'dosage_manual' => 'nullable|required_if:dosage_select,other|string|max:100',
+            'times' => 'nullable|array',
+            // 空欄（未使用の自由入力欄）は許容しつつ、値がある場合はHH:MM形式であることを検証する
+            'times.*' => 'nullable|date_format:H:i',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ];
-    }
-
-    /**
-     * エラーメッセージ
-     */
-    public function messages(): array
-    {
-        return [
-            'medicine_name.required' => '薬名は必須です。',
-            'medicine_name.max' => '薬名は50文字以内で入力してください。',
-            'image.image' => '画像ファイルを選択してください。',
-            'image.mimes' => '対応していないファイル形式です。JPEGまたはPNGをアップロードしてください。',
-            'image.max' => 'ファイルサイズは2MB以下にしてください。',
         ];
     }
 }

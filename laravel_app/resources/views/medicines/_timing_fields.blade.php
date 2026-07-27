@@ -29,6 +29,13 @@
         @endforeach
     </div>
 
+    @error($timeFieldName)
+        <p style="color: #d32f2f; font-size: 14px; margin-top: 8px;">{{ $message }}</p>
+    @enderror
+    @error("{$timeFieldName}.*")
+        <p style="color: #d32f2f; font-size: 14px; margin-top: 8px;">{{ $message }}</p>
+    @enderror
+
     <button type="button" onclick="addCustomTime()" style="margin-top: 10px; background-color: #efebe9; border: 1px solid #d7ccc8; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.9em; color: #5d4037; font-weight: bold; width: 100%;">
         ＋ 食間など、他の時間を追加する
     </button>
