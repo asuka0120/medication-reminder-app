@@ -51,6 +51,26 @@ class MedicineScheduleDesignTest extends TestCase
         $this->assertCount(0, $morning->fresh()->adherences);
     }
 
+    public function test_taking_the_same_schedule_twice_in_one_day_does_not_duplicate(): void
+    {
+        $user = User::factory()->create();
+        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
+        $medicine = Medicine::create([
+            'patient_id' => $patient->id,
+            'medicine_name' => '薬A',
+            'dosage' => '1錠',
+        ]);
+        $morning = $medicine->schedules()->create(['scheduled_time' => '08:00']);
+
+        // 通信の遅延などで、同じ「飲んだ！」ボタンが2回送信されてしまったケースを想定
+        $this->actingAs($user)->post("/medicine-schedules/{$morning->id}/take", ['note' => '1回目']);
+        $this->actingAs($user)->post("/medicine-schedules/{$morning->id}/take", ['note' => '2回目']);
+
+        // 記録は1件だけで、最初の内容が保持されていること
+        $this->assertCount(1, $morning->fresh()->adherences);
+        $this->assertSame('1回目', $morning->fresh()->adherences->first()->note);
+    }
+
     public function test_deleting_medicine_moves_it_to_trash_and_can_be_restored(): void
     {
         $user = User::factory()->create();
