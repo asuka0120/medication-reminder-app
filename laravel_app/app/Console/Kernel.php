@@ -2,6 +2,9 @@
 
 namespace App\Console;
 
+use App\Models\MedicineSchedule;
+use App\Models\User;
+use App\Notifications\MedicationReminder;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -15,7 +18,7 @@ class Kernel extends ConsoleKernel
         // 1分ごとに、今飲むべき薬があるかチェックする
         $schedule->call(function () {
             $now = now()->format('H:i');
-            $schedules = \App\Models\MedicineSchedule::with('medicine.patient')
+            $schedules = MedicineSchedule::with('medicine.patient')
                 ->where('scheduled_time', $now.':00')
                 ->get();
 
@@ -23,9 +26,9 @@ class Kernel extends ConsoleKernel
                 $medicine = $medicineSchedule->medicine;
 
                 // 管理者（あなた）に通知を送る
-                $user = \App\Models\User::first();
+                $user = User::first();
                 if ($user) {
-                    $user->notify(new \App\Notifications\MedicationReminder(
+                    $user->notify(new MedicationReminder(
                         'お薬の時間です',
                         "{$medicine->patient->name}さんの「{$medicine->medicine_name}」の時間になりました。"
                     ));

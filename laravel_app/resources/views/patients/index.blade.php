@@ -1,3 +1,4 @@
+@use('Carbon\Carbon')
 <style>
     body {
         background-color: #fdfaf2;
@@ -204,7 +205,7 @@
 
                                 // 予定時刻が過ぎていること、飲んだボタンを押していないこと、この2つの条件をチェックする必要がある。
                                 // なぜなら、もう飲んだ薬まで「飲み忘れ」の警告が出続けるから
-                                $scheduledTime = \Carbon\Carbon::parse($schedule->scheduled_time);
+                                $scheduledTime = Carbon::parse($schedule->scheduled_time);
                                 $isOverdue = !$isTaken && $scheduledTime->isBefore(now());
                             @endphp
                             
@@ -219,7 +220,7 @@
                                         <div style="display: flex; align-items: center; gap: 8px;">
                                             <span style="color: #2e7d32; font-weight: bold;" 
                                                   class="status-taken clickable"
-                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : $scheduledTime->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
+                                                  onclick="showBigDisplay('{{ now()->format('n月j日') }} {{ $adherence->taken_time ? Carbon::parse($adherence->taken_time)->format('H:i') : $scheduledTime->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note ?? '') }}')">
                                                 ✅ 服用済み
                                             </span>
                                             <form action="{{ route('medicine-schedules.cancel', $schedule->id) }}" method="POST" style="display:inline;">

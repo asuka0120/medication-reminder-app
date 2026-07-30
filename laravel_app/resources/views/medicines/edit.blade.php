@@ -1,3 +1,4 @@
+@use('Carbon\Carbon')
 <style>
     body {
         background-color: #fdfaf2;
@@ -55,7 +56,7 @@
     // 現在登録されている全時刻を取得（このお薬のスケジュールを直接参照するだけでよくなった）
     $checkedTimes = $medicine->schedules
                         ->pluck('scheduled_time')
-                        ->map(fn ($t) => \Carbon\Carbon::parse($t)->format('H:i'))
+                        ->map(fn ($t) => Carbon::parse($t)->format('H:i'))
                         ->toArray();
     // 固定選択肢以外の時間を「カスタム時間」として抽出
     $customTimes = array_diff($checkedTimes, array_values($fixedTimings));

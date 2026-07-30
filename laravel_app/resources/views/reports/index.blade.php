@@ -1,3 +1,4 @@
+@use('Carbon\Carbon')
 <h1>週間の服薬レポート</h1>
 
 <div style="margin-bottom: 20px;">
@@ -12,7 +13,7 @@
             <tr style="background-color: #f0f0f0;">
                 <th>お薬名</th>
                 @foreach($dates as $date)
-                    <th>{{ \Carbon\Carbon::parse($date)->format('m/d') }}</th>
+                    <th>{{ Carbon::parse($date)->format('m/d') }}</th>
                 @endforeach
             </tr>
             

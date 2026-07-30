@@ -1,3 +1,4 @@
+@use('Carbon\Carbon')
 <style>
     body {
         background-color: #fdfaf2;
@@ -110,7 +111,7 @@
                             @endif
                             <div>
                                 <div style="font-size: 0.9em;">{{ $medicine->medicine_name }}</div>
-                                <div style="font-size: 0.7em; color: #666;">{{ \Carbon\Carbon::parse($schedule->scheduled_time)->format('H:i') }}</div>
+                                <div style="font-size: 0.7em; color: #666;">{{ Carbon::parse($schedule->scheduled_time)->format('H:i') }}</div>
                             </div>
                         </div>
                     </td>
@@ -121,7 +122,7 @@
                         <td class="{{ $date->isToday() ? 'today-highlight' : '' }}"
     style="{{ (!$adherence && $date->isPast() && !$date->isToday()) ? 'background-color: #ffebee;' : '' }}">
     @if($adherence)
-        <div class="check-box" onclick="showBigDisplay('{{ $date->format('n月j日') }} {{ $adherence->taken_time ? \Carbon\Carbon::parse($adherence->taken_time)->format('H:i') : \Carbon\Carbon::parse($schedule->scheduled_time)->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note) }}')">✅</div>
+        <div class="check-box" onclick="showBigDisplay('{{ $date->format('n月j日') }} {{ $adherence->taken_time ? Carbon::parse($adherence->taken_time)->format('H:i') : Carbon::parse($schedule->scheduled_time)->format('H:i') }}', '{{ $medicine->medicine_name }}', '{{ $medicine->image_path ? asset('storage/' . $medicine->image_path) : '' }}', '{{ addslashes($adherence->note) }}')">✅</div>
         @if($adherence->note)
             <div style="font-size: 0.7em; color: #666; line-height: 1.1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{ Str::limit($adherence->note, 10, '…') }}</div>
         @endif
