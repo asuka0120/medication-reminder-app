@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Medicine;
-use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,7 +14,7 @@ class FormRequestVerificationTest extends TestCase
     public function test_own_patient_can_be_updated(): void
     {
         $user = User::factory()->create();
-        $patient = Patient::create(['user_id' => $user->id, 'name' => '元の名前']);
+        $patient = $user->patients()->create(['name' => '元の名前']);
 
         $response = $this->actingAs($user)->put("/patients/{$patient->id}", [
             'name' => '更新後の名前',
@@ -29,7 +28,7 @@ class FormRequestVerificationTest extends TestCase
     {
         $owner = User::factory()->create();
         $stranger = User::factory()->create();
-        $patient = Patient::create(['user_id' => $owner->id, 'name' => '元の名前']);
+        $patient = $owner->patients()->create(['name' => '元の名前']);
 
         $response = $this->actingAs($stranger)->put("/patients/{$patient->id}", [
             'name' => '不正な更新',
@@ -42,7 +41,7 @@ class FormRequestVerificationTest extends TestCase
     public function test_patient_update_requires_name(): void
     {
         $user = User::factory()->create();
-        $patient = Patient::create(['user_id' => $user->id, 'name' => '元の名前']);
+        $patient = $user->patients()->create(['name' => '元の名前']);
 
         $response = $this->actingAs($user)->put("/patients/{$patient->id}", [
             'name' => '',
@@ -54,7 +53,7 @@ class FormRequestVerificationTest extends TestCase
     public function test_own_medicine_can_be_updated(): void
     {
         $user = User::factory()->create();
-        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
+        $patient = $user->patients()->create(['name' => '患者A']);
         $medicine = Medicine::create([
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',
@@ -75,7 +74,7 @@ class FormRequestVerificationTest extends TestCase
     {
         $owner = User::factory()->create();
         $stranger = User::factory()->create();
-        $patient = Patient::create(['user_id' => $owner->id, 'name' => '患者A']);
+        $patient = $owner->patients()->create(['name' => '患者A']);
         $medicine = Medicine::create([
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',

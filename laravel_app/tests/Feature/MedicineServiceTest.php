@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Medicine;
-use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,7 +14,7 @@ class MedicineServiceTest extends TestCase
     public function test_store_fails_when_no_valid_time_is_selected(): void
     {
         $user = User::factory()->create();
-        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
+        $patient = $user->patients()->create(['name' => '患者A']);
 
         $response = $this->actingAs($user)->post('/medicines', [
             'patient_id' => $patient->id,
@@ -31,7 +30,7 @@ class MedicineServiceTest extends TestCase
     public function test_store_creates_one_medicine_per_selected_time(): void
     {
         $user = User::factory()->create();
-        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
+        $patient = $user->patients()->create(['name' => '患者A']);
 
         $response = $this->actingAs($user)->post('/medicines', [
             'patient_id' => $patient->id,
@@ -48,7 +47,7 @@ class MedicineServiceTest extends TestCase
     public function test_update_fails_when_no_valid_time_is_selected(): void
     {
         $user = User::factory()->create();
-        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
+        $patient = $user->patients()->create(['name' => '患者A']);
         $medicine = Medicine::create([
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',

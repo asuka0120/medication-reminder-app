@@ -36,12 +36,14 @@ class PatientController extends Controller
     {
         // バリデーションはStorePatientRequestに集約済み。
 
-        $patient = new Patient;
-        $patient->user_id = auth()->id(); // ログインユーザーのIDを紐づける
-        $patient->name = $request->name;
-        $patient->nickname = $request->nickname;
-        $patient->memo = $request->memo;
-        $patient->save();
+        // ログインユーザーの患者として、リレーション経由で作成する。
+        // これにより user_id はリクエストの値に依存せず、常にログインユーザーのIDが
+        // 自動的に設定される（Patient::$fillable に user_id を含める必要がない）。
+        auth()->user()->patients()->create([
+            'name' => $request->name,
+            'nickname' => $request->nickname,
+            'memo' => $request->memo,
+        ]);
 
         return redirect()->route('patients.index');
     }

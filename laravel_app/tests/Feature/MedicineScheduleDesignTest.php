@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Medicine;
-use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,7 +14,7 @@ class MedicineScheduleDesignTest extends TestCase
     public function test_medicine_can_have_multiple_schedules(): void
     {
         $user = User::factory()->create();
-        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
+        $patient = $user->patients()->create(['name' => '患者A']);
         $medicine = Medicine::create([
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',
@@ -30,7 +29,7 @@ class MedicineScheduleDesignTest extends TestCase
     public function test_take_and_cancel_work_per_schedule(): void
     {
         $user = User::factory()->create();
-        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
+        $patient = $user->patients()->create(['name' => '患者A']);
         $medicine = Medicine::create([
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',
@@ -54,7 +53,7 @@ class MedicineScheduleDesignTest extends TestCase
     public function test_taking_the_same_schedule_twice_in_one_day_does_not_duplicate(): void
     {
         $user = User::factory()->create();
-        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
+        $patient = $user->patients()->create(['name' => '患者A']);
         $medicine = Medicine::create([
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',
@@ -74,7 +73,7 @@ class MedicineScheduleDesignTest extends TestCase
     public function test_deleting_medicine_moves_it_to_trash_and_can_be_restored(): void
     {
         $user = User::factory()->create();
-        $patient = Patient::create(['user_id' => $user->id, 'name' => '患者A']);
+        $patient = $user->patients()->create(['name' => '患者A']);
         $medicine = Medicine::create([
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',

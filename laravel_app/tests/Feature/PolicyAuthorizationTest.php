@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Adherence;
 use App\Models\Medicine;
-use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,7 +16,7 @@ class PolicyAuthorizationTest extends TestCase
     {
         $owner = User::factory()->create();
         $stranger = User::factory()->create();
-        $patient = Patient::create(['user_id' => $owner->id, 'name' => '患者A']);
+        $patient = $owner->patients()->create(['name' => '患者A']);
 
         $response = $this->actingAs($stranger)->get("/patients/{$patient->id}");
 
@@ -28,7 +27,7 @@ class PolicyAuthorizationTest extends TestCase
     {
         $owner = User::factory()->create();
         $stranger = User::factory()->create();
-        $patient = Patient::create(['user_id' => $owner->id, 'name' => '患者A']);
+        $patient = $owner->patients()->create(['name' => '患者A']);
 
         $response = $this->actingAs($stranger)->get("/patients/{$patient->id}/edit");
 
@@ -39,7 +38,7 @@ class PolicyAuthorizationTest extends TestCase
     {
         $owner = User::factory()->create();
         $stranger = User::factory()->create();
-        $patient = Patient::create(['user_id' => $owner->id, 'name' => '患者A']);
+        $patient = $owner->patients()->create(['name' => '患者A']);
 
         $response = $this->actingAs($stranger)->delete("/patients/{$patient->id}");
 
@@ -50,7 +49,7 @@ class PolicyAuthorizationTest extends TestCase
     {
         $owner = User::factory()->create();
         $stranger = User::factory()->create();
-        $patient = Patient::create(['user_id' => $owner->id, 'name' => '患者A']);
+        $patient = $owner->patients()->create(['name' => '患者A']);
 
         $response = $this->actingAs($stranger)->get('/medicines/create?patient_id='.$patient->id);
 
@@ -106,7 +105,7 @@ class PolicyAuthorizationTest extends TestCase
     {
         $owner = User::factory()->create();
         $stranger = User::factory()->create();
-        $patient = Patient::create(['user_id' => $owner->id, 'name' => '患者A']);
+        $patient = $owner->patients()->create(['name' => '患者A']);
         $medicine = Medicine::create([
             'patient_id' => $patient->id,
             'medicine_name' => '薬A',

@@ -8,22 +8,22 @@ use NotificationChannels\WebPush\WebPushMessage;
 
 class MedicationReminder extends Notification
 {
-    private $title;
+    private string $title;
 
-    private $body;
+    private string $body;
 
-    public function __construct($title, $body)
+    public function __construct(string $title, string $body)
     {
         $this->title = $title;
         $this->body = $body;
     }
 
-    public function via($notifiable)
+    public function via($notifiable): array
     {
         return [WebPushChannel::class]; // WebPushを使うという指定
     }
 
-    public function toWebPush($notifiable, $notification)
+    public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage)
             ->title($this->title)
