@@ -71,13 +71,84 @@ docker compose exec web php artisan migrate
 - アプリ本体: http://localhost
 - Mailpit（開発用メール確認画面）: http://localhost:8025
 
+## 環境変数の設定
+
+`.env.example` をコピーした `.env` は、この開発環境（Docker Compose）の設定に合わせてあるため、基本的にはそのままで動作します。編集する場合や、値の意味を知りたい場合は以下を参考にしてください。
+
+| 変数名 | 役割 | 備考 |
+|---|---|---|
+| `APP_URL` | アプリのURL | ローカル開発では `http://localhost` のままでOK |
+| `APP_KEY` | 暗号化キー | `php artisan key:generate` で自動生成されるため、手動で入力する必要はない |
+| `DB_CONNECTION` / `DB_HOST` / `DB_DATABASE` / `DB_USERNAME` / `DB_PASSWORD` | データベース接続情報 | `docker-compose.yml` のMySQLコンテナの設定と合わせてある |
+| `MAIL_MAILER` / `MAIL_HOST` / `MAIL_PORT` | メール送信設定 | 開発環境ではMailpitに向けているため、実際のメールサーバーは不要（送信したメールは http://localhost:8025 で確認できる） |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | プッシュ通知（Web Push）用の鍵ペア | `.env.example` には含まれていない。サーバー側からのプッシュ通知（`app/Notifications/MedicationReminder.php`）を有効にする場合のみ、下記コマンドで生成する |
+
+プッシュ通知用の鍵を生成する場合：
+
+```bash
+docker compose exec web php artisan webpush:vapid
+```
+
+実行すると、`VAPID_PUBLIC_KEY` と `VAPID_PRIVATE_KEY` が自動的に `.env` に追記されます。
+
+## データベース（マイグレーション）
+
+初回セットアップ時は前述のとおり `php artisan migrate` を実行します。それ以外に、以下のようなケースで使うコマンドです。
+
+```bash
+# 開発中にテーブル構成を最初からやり直したい場合
+# （既存のデータは全て削除されるので注意）
+docker compose exec web php artisan migrate:fresh
+
+# 未実行のマイグレーションがどれか確認したい場合
+docker compose exec web php artisan migrate:status
+```
+
+主なテーブルは前述の「データベース構成」の通りです。マイグレーションファイルは `laravel_app/database/migrations/` にあり、ファイル名の日付順に実行されます。
+
 ## テスト
 
 ```bash
+# 自動テスト（PHPUnit）を実行
 docker compose exec web php artisan test
 ```
 
-認証まわりの機能テスト（PHPUnit）に加え、開発初期段階では手動テストケースによる検証も行っています。
+`laravel_app/tests/Feature/` 以下に、認証まわり・患者情報のCRUD・お薬の登録更新・服薬記録の重複防止・認可（他人のデータにアクセスできないか）などの機能テストがあります。コミット前には、コードスタイルの確認とあわせて以下を実行しています。
+
+```bash
+# コードスタイルチェック・自動整形（Laravel Pint）
+docker compose exec web php vendor/bin/pint
+
+# 自動テスト
+docker compose exec web php artisan test
+```
+
+開発初期段階では、上記に加えてExcelベースの手動テストケース（認証まわり42件など）による検証も行っています。
+
+## スクリーンショット
+
+### お薬一覧・服薬記録画面
+
+患者ごとのお薬と、当日の服薬状況を一覧表示。「飲んだ！」ボタンでワンタップ記録でき、飲み忘れている時間帯は赤く警告表示されます。
+
+![お薬一覧・服薬記録画面](docs/screenshots/patients-index.png)
+
+### 月間カレンダー画面
+
+1ヶ月分の服薬記録をカレンダー形式で確認できます。
+
+![月間カレンダー画面](docs/screenshots/patient-calendar.png)
+
+### お薬登録・編集画面
+
+薬名・分量・服用時刻・写真を登録します（新規登録画面・編集画面）。
+
+![お薬登録画面](docs/screenshots/medicine-create.png)
+![お薬編集画面](docs/screenshots/medicine-edit.png)
+
+### 週間服薬レポート画面
+
+*(この画面は現在ルーティングが未実装のため、動作確認・スクリーンショットの追加は別課題として今後対応予定です。)*
 
 ## コードスタイル
 
