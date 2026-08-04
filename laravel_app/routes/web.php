@@ -3,6 +3,7 @@
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TrashController;
 use Illuminate\Support\Facades\Route;
 
@@ -49,6 +50,9 @@ Route::middleware(['auth', 'nocache'])->group(function () {
     Route::get('/trash', [TrashController::class, 'index'])->name('trash.index');
     Route::post('/trash/{id}/restore', [TrashController::class, 'restore'])->name('trash.restore');
     Route::delete('/trash/{id}/force-delete', [TrashController::class, 'forceDelete'])->name('trash.forceDelete');
+
+    // 週間服薬レポート
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 });
 
 require __DIR__.'/auth.php';

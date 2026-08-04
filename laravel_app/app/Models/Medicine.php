@@ -36,4 +36,13 @@ class Medicine extends Model
     {
         return $this->hasMany(MedicineSchedule::class);
     }
+
+    /**
+     * リレーション設定：このお薬の服薬記録を、スケジュール（何時の分か）をまたいでまとめて取得する
+     * 例：ロキソニンの「朝の分」「晩の分」、両方の服薬記録を合わせて取得できる
+     */
+    public function adherences()
+    {
+        return $this->hasManyThrough(Adherence::class, MedicineSchedule::class);
+    }
 }
