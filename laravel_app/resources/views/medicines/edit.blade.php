@@ -63,7 +63,10 @@
 @endphp
 
 <div class="edit-container">
-    <h1>💊 お薬情報の編集</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>💊 お薬情報の編集</h1>
+        @include('partials.logout_link')
+    </div>
 
     @include('partials.error_banner')
 

@@ -119,9 +119,12 @@
     }
 </style>
 
-<h1>ご家族のための服薬管理（くすりサポート）</h1>
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <h1 style="margin: 0;">ご家族のための服薬管理（くすりサポート）</h1>
+    @include('partials.logout_link')
+</div>
 
-<div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+<div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-top: 15px;">
     <a href="{{ route('patients.create') }}" style="text-decoration: none; font-weight: bold; color: #1976D2;">＋ 新しく家族を登録する</a>
     <a href="{{ route('reports.index') }}" style="color: #9C27B0; text-decoration: none;">[ 📊 週間レポートを見る ]</a>
     <a href="{{ route('trash.index') }}" style="color: #607D8B; text-decoration: none;">[ 🗑 ゴミ箱を見る ]</a>

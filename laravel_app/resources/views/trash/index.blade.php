@@ -21,7 +21,10 @@
 </head>
 <body>
 
-<h1>🗑 ゴミ箱</h1>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>🗑 ゴミ箱</h1>
+    @include('partials.logout_link')
+</div>
 
 @if(session('success'))
     <div class="alert">{{ session('success') }}</div>

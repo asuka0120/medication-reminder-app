@@ -1,8 +1,9 @@
 {{-- 全体を中央に寄せるための外枠 --}}
 <div style="max-width: 600px; margin: 50px auto; padding: 20px; font-family: 'Helvetica Neue', Arial, sans-serif;">
     
-    <div style="margin-bottom: 20px;">
+    <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
         <a href="{{ route('patients.index') }}" style="color: #5D4037; text-decoration: none; font-weight: bold;">← 一覧に戻る</a>
+        @include('partials.logout_link')
     </div>
 
     {{-- 入力エリアをカード風にする --}}

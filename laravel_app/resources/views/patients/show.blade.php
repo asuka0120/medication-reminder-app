@@ -74,7 +74,10 @@
     }
 </style>
 
-<h1>{{ $patient->name }} さんの服用履歴</h1>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>{{ $patient->name }} さんの服用履歴</h1>
+    @include('partials.logout_link')
+</div>
 
 <div class="calendar-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">

@@ -50,7 +50,10 @@
 @endphp
 
 <div class="form-container">
-    <h1>💊 {{ $patient->name }} さんのお薬登録</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>💊 {{ $patient->name }} さんのお薬登録</h1>
+        @include('partials.logout_link')
+    </div>
 
     @include('partials.error_banner')
 

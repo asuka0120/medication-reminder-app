@@ -34,7 +34,10 @@
 </head>
 <body>
 
-<h1 style="color: #4e342e;">家族情報の編集</h1>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h1 style="color: #4e342e; margin: 0;">家族情報の編集</h1>
+    @include('partials.logout_link')
+</div>
 
 <div class="form-card">
     <form action="{{ route('patients.update', $patient->id) }}" method="POST">

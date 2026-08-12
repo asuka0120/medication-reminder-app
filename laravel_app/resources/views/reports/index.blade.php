@@ -1,5 +1,8 @@
 @use('Carbon\Carbon')
-<h1>週間の服薬レポート</h1>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>週間の服薬レポート</h1>
+    @include('partials.logout_link')
+</div>
 
 <div style="margin-bottom: 20px;">
     <a href="{{ route('patients.index') }}">← お薬一覧に戻る</a>
