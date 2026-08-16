@@ -16,7 +16,7 @@
 
 | カテゴリ | 使用技術 |
 |---|---|
-| バックエンド | PHP 8.2 / Laravel 10 |
+| バックエンド | PHP 8.2 / Laravel 12 |
 | データベース | MySQL 8.0 |
 | フロントエンド | Blade / Tailwind CSS / Alpine.js |
 | 認証 | Laravel Breeze |
